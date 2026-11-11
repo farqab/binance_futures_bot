@@ -1,0 +1,1352 @@
+=== PAGE 1 ===
+​Binance Vadeli İşlemler Çoklu-Parite​
+​Rust Quant Botu v10.2 Teknik​
+​Şartnamesi Mimari, Mikroyapısal ve​
+​Kantitatif Risk Denetim Raporu​
+​Yönetici Özeti ve Mimari Bütünlük Değerlendirmesi​
+​Binance USDT-M Sürekli Vadeli İşlemler (Perpetual Futures) piyasasında mikro-sermaye​
+​ölçeğinde (​
+​1000) faaliyet göstermek üzere tasarlanan v10.2 "Tri-Regime Scalp & Confluence​
+​10–​
+​Sniper" Rust algoritmik işlem sisteminin teknik şartnamesi; sermaye koruma önceliği, korelasyon​
+​riskinin sınırlandırılması ve çöp toplayıcı (Garbage Collection - GC) duraksamalarından​
+​arındırılmış milisaniye altı icra hedefleri açısından kapsamlı biçimde denetlenmiştir​​1​​. Sistemin üç​
+​ortogonal pazar rejimini (Likidite ve Fitil Süpürme, Momentum ve Donchian Trend Kırılımı,​
+​Dinamik EMA21 Pullback Avcısı) tekil bir yürütme çekirdeğinde birleştirmesi, işlem açıldığı anda​
+​borsa eşleşme motoruna sunucu taraflı donanım koruma emirleri (STOP_MARKET,​
+​TAKE_PROFIT_MARKET) yerleştirmesi ve ardışık stoplara karşı devre kesici (Circuit Breaker)​
+​mekanizmalar barındırması, perakende algoritmik sistemlerde sıkça rastlanan çoklu tasfiye​
+​(cascading liquidation) riskini yapısal olarak sınırlayan disiplinli bir temel sunmaktadır​​1​​.​
+​Bununla birlikte, şartnamenin 7. bölümünde sunulan 5 günlük gerçek veri backtest sonuçları​
+​(5–9 Kasım 2026, 15 parite, 1440 adet 5 dakikalık mum) ve 10 Kasım 2026 tarihli canlı mainnet​
+​icra telemetrisi, kantitatif risk mühendisliği ve finansal yazılım mimarisi açısından kritik yapısal​
+​darboğazları açığa çıkarmaktadır​​1​​. Sistem 5 günde​​toplam 31 filtrelenmiş işlem gerçekleştirmiş​
+​ve %71.0 gibi yüksek bir kazanma oranına (22 kazanç, 9 kayıp) ulaşmıştır​​1​​. Ancak üretilen +​
+​1.15 USDT'lik kısmı Binance Taker komisyonlarına ödenmiş​
+​2​. ​68​𝑈𝑆𝐷𝑇𝑘𝑜𝑚𝑖𝑠𝑦𝑜𝑛​ö​𝑛𝑐𝑒𝑠𝑖𝑏𝑟​ü​𝑡𝑘​â​𝑟​ı​𝑛​ −
+​ve net kasa büyümesi +$1.53 USDT (+%16.2 net getiri) olarak gerçekleşmiştir​​1​​. Bu ampirik veri​
+​seti, piyasa emirlerinden kaynaklanan komisyon yükünün (fee drag) brüt kârın %42.91'ini​
+​tüketirken net kârın %75.16'sına eşdeğer bir erozyon yarattığını kanıtlamaktadır​​2​​. İşlem başına​
+​ortalama komisyon öncesi brüt beklenti​​0​. ​0865​𝑈𝑆𝐷𝑇𝑖𝑘𝑒𝑛​, ​𝑖​ş​𝑙𝑒𝑚𝑏𝑎​şı​𝑛𝑎​ö​𝑑𝑒𝑛𝑒𝑛𝑜𝑟𝑡𝑎𝑙𝑎𝑚𝑎​ −
+​0.0371 USDT Taker komisyonu sonrasında işlem başına net beklenti (expectancy) yalnızca​
+​$0.0494 USDT seviyesine düşmektedir​​2​​.​
+​Performans ve​
+​Telemetri Metriği​
+​5 Günlük Backtest​
+​/ Canlı Mainnet​
+​Değeri​
+​İşlem Başına /​
+​Oransal Karşılık​
+​Kantitatif Risk​
+​Denetim Bulgusu​
+​Toplam İşlem ve​
+​31 İşlem (22 Kazanç​
+​%70.97 Kazanma​
+​Sinyal yön tahmin​
+
+
+=== PAGE 2 ===
+​Kazanma Oranı​
+​/ 9 Kayıp)​​1​
+​Oranı​​2​
+​kalitesi yüksek​
+​ancak işlem frekansı​
+​(günde 6.2 işlem)​
+​düşük​​1​​.​
+​Komisyon Öncesi​
+​Brüt Kâr​
+​+$2.68 USDT​​1​
+​+$0.0865 USDT /​
+​işlem​​2​
+​9 kayıp işlem tam -​
+​0​. ​25​𝑠𝑡𝑜𝑝𝑜𝑙𝑑𝑢​ğ​𝑢𝑛𝑑𝑎​(−
+​2.25), 22 kazancın​
+​toplamı +$4.93​
+​USDT etmektedir​​2​​.​
+​Ödenen Binance​
+​Taker Komisyonu​
+​-$1.15 USDT​​1​
+​-$0.0371 USDT /​
+​işlem​​2​
+​Brüt kârın​
+​%42.91'ini, net kârın​
+​%75.16'sını eriten​
+​birincil yapısal​
+​darboğaz​​2​​.​
+​Net Kasa​
+​Büyümesi​
+​+$1.53 USDT​
+​(+%16.2)​​1​
+​+$0.0494 USDT /​
+​işlem​​2​
+​Komisyon erozyonu​
+​sonrası birim işlem​
+​başına net​
+​matematiksel​
+​beklenti çok dar​​2​​.​
+​Gerçekleşen​
+​Kazanç / Kayıp​
+​Oranı (​
+​)​
+​Ortalama Kazanç:​
+​$0.2241 / Kayıp:​
+​$0.2500​​2​
+​(Teorik Kelly:​
+​%38.58)​​2​
+​Hedeflenen 1:2.5 –​
+​1:3.5 R:R oranının​
+​aksine sistem 1:0.90​
+​R:R ile​
+​çalışmaktadır​​1​​.​
+​Canlı Mainnet​
+​Kanıtı​
+​(1000PEPEUSDT)​
+​SHORT: Giriş​
+​0.0052717​
+​Çıkış​
+​0.0052649​​1​
+​Süre: 48 sn, Bakiye:​
+​$9.44​
+​$9.49​
+​(+%0.53)​​1​
+​Erken​
+​Başabaş Kilidi trendi​
+​48 saniyede​
+​fiyat​
+​hareketiyle erken​
+​kesmiştir​​1​​.​
+​Tablodaki verilerin ortaya koyduğu üzere, şartnamenin 1. bölümünde hedeflenen minimum 1:2.5​
+​ve ortalama 1:3.5 asimetrik risk/ödül (R:R) oranına​​1​​karşın,​
+​seviyesinde devreye giren​
+​Erken Başabaş Kilidi (Early Breakeven Lock) sağ kuyruk trend kazançlarını (fat-tail trends)​
+​sistematik olarak kırpmakta ve ortalama kazancı (​
+​0.2500) altına​
+​0​. ​2241​)​𝑜𝑟𝑡𝑎𝑙𝑎𝑚𝑎𝑘𝑎𝑦𝑏​ı​𝑛​(
+​çekmektedir​​1​​. Sistemin hem yüksek işlem frekansına​​ulaşması hem de birim işlem başına pozitif​
+
+
+=== PAGE 3 ===
+​matematiksel beklentiyi büyütmesi için; fiziksel ağ topolojisinden kilit-serbest (lock-free) bellek​
+​yapılarına, Poisson/Hawkes emir akışı modellemesinden Maker-öncelikli (GTX Post-Only)​
+​WebSocket icra protokolüne kadar bütüncül bir mimari revizyon gerekmektedir​​2​​.​
+​Satır Satır Sistem ve Yazılım Mimarisi Denetimi​
+​Donanım, Ağ Topolojisi ve Eşzamanlılık Mimarisi Denetimi (Bölüm 1 ve​
+​2)​
+​Şartnamenin 1. ve 2. bölümleri, sistemin AWS EC2 (Ubuntu 24.04 LTS) üzerinde systemd servisi​
+​olarak çalıştığını, 30 parite için AggTrade ve 5m Klines WebSocket akışlarını​
+​(wss://fstream.binance.com/stream) dinlediğini, emirleri REST API v1 üzerinden ilettiğini ve​
+​durum yönetimini Arc<Mutex<T>>, VecDeque ve HashMap yapılarıyla gerçekleştirdiğini​
+​belirtmektedir​​1​​. Bu altyapı katmanında dört temel​​mühendislik kör noktası tespit edilmiştir.​
+​İlk kör nokta, coğrafi konumlandırma (AWS bölge seçimi) ve fiziksel ağ gecikmesidir.​
+​Şartnamede sıfır gecikmeli Rust ikili dosyasından (binary) söz edilmesine karşın, AWS EC2​
+​sunucusunun hangi bölgede (region) konumlandırıldığı tanımlanmamıştır​​1​​. Binance Vadeli​
+​İşlemler eşleşme motoru (matching engine) ve birincil API düğümleri AWS Tokyo​
+​(ap-northeast-1, özellikle ap-northeast-1a alt ağı) üzerinde çalışmaktadır​​3​​. AWS Tokyo​
+​içerisinden Binance sunucularına gidiş-dönüş (round-trip) gecikmesi 5–23 ms (aynı alt ağ içinde​
+​~8 ms) aralığındayken, Singapur (ap-southeast-1) için 206 ms, Frankfurt (eu-central-1) için 268​
+​ms, Londra (eu-west-2) için 269 ms ve Kuzey Virginia (us-east-1) için 424 ms (Tokyo'dan 18 kat​
+​daha yavaş) seviyesindedir​​3​​. Eğer EC2 örneği ap-northeast-1​​dışında bir bölgede çalışıyorsa,​
+​Rust dilinin sağladığı mikrosaniye düzeyindeki bellek içi hız avantajı okyanus aşırı fiber optik​
+​gecikmesi nedeniyle tamamen etkisizleşmekte ve botun gördüğü her AggTrade fiyatı emir​
+​borsaya ulaşmadan bayatlayarak (stale price) piyasa emirlerinde ağır kayma (slippage) vergisine​
+​dönüşmektedir​​3​​.​
+​İkinci kör nokta, Arc<Mutex<T>> kilit çekişmesi (lock contention) ve kuyruk gecikmesidir​
+​(tail-latency). 30 paritenin gerçek zamanlı AggTrade akışı, piyasa kırılımlarında saniyede binlerce​
+​mesaj üretir​​1​​. Durum paylaşımı için işletim sistemi​​veya asenkron kilitlerin (Mutex) kullanılması,​
+​okuma ve yazma iş parçacıkları (ingestion thread, 10 saniyede bir çalışan BTC Quad-TF thread,​
+​13 sembol motoru, TreeNews haber ayrıştırıcısı ve risk motoru) arasında kilit çekişmesine (mutex​
+​convoying) yol açar​​1​​. Arka plandaki bir iş parçacığı​​HashMap veya sembol durum kilidini elinde​
+​tutarken gelen kritik bir fiyat tiki beklemeye alınır. Mikro-sermayeli yüksek frekanslı bir sistemde​
+​Arc<Mutex<HashMap<Symbol, State>>> yerine; her sembolün derleme zamanında sabit bir dizi​
+​indeksine ([SymbolState; 30]) eşlendiği, iş parçacıkları arası iletişimin kilit-serbest (lock-free)​
+​tek-yazıcı/tek-okuyucu (SPSC) halka tamponlarla sağlandığı ve paylaşılan makro referans​
+​verilerinin ArcSwap veya atomik değişkenlerle (AtomicU64) sıfır kilitle okunduğu bir mimariye​
+​geçilmelidir.​
+​Üçüncü kör nokta, emir iletiminde REST API v1 yerine WebSocket API (ws-fapi) protokolünün​
+​kullanılmamasıdır. Şartname, piyasa verilerinin WebSocket'ten alındığını ancak emir iletiminin​
+​REST API v1 üzerinden yapıldığını göstermektedir​​1​​.​​Oysa Binance USDⓈ-M Vadeli İşlemler​
+
+
+=== PAGE 4 ===
+​borsası, kalıcı bağlantı üzerinden doğrudan emir gönderimi, değişimi ve algoritmik şartlı emir​
+​iletimi sağlayan WebSocket API (wss://ws-fapi.binance.com/ws-fapi/v1) altyapısını sunmaktadır​​4​​.​
+​REST üzerinden emir göndermek her işlemde HTTP başlık ayrıştırma ve bağlantı havuzu maliyeti​
+​yaratırken, WebSocket API üzerinde Ed25519 asimetrik anahtarlarıyla session.logon üzerinden​
+​bir kez kimlik doğrulaması yapıldıktan sonra tüm order.place, order.modify, order.cancel ve​
+​algoOrder.place istekleri imza veya bağlantı ek yükü olmaksızın doğrudan iletilebilmektedir​​4​​.​
+​Daha da önemlisi, Binance koşullu emirleri (STOP_MARKET, TAKE_PROFIT_MARKET,​
+​TRAILING_STOP_MARKET) algoOrder.place (POST /fapi/v1/algoOrder, algoType: CONDITIONAL)​
+​yapısına taşımıştır ve WebSocket API üzerinden yapılan emir değişiklikleri (order.modify) ile​
+​algoritmik emirler IP tabanlı istek ağırlığı kotasını (x-mbx-used-weight-1m, dakikada 2400​
+​ağırlık) sıfır (0) olarak tüketmekte, yalnızca UID tabanlı 10 saniyelik (varsayılan 300 emir/10sn) ve​
+​1 dakikalık (1200 emir/dk) emir sayaçlarına işlenmektedir​​5​​.​
+​Dördüncü kör nokta, sunucu taraflı STOP_MARKET emirlerinde atomiklik eksikliği ve tetikleme​
+​parametrelerinin tanımsızlığıdır. İşlem açıldığı anda borsaya sunucu taraflı STOP_MARKET ve​
+​TAKE_PROFIT_MARKET yerleştirilmesi doğru bir güvenlik pratiğidir​​1​​. Ancak Binance Futures'ta​
+​giriş emri ile (closePosition=true parametreli) şartlı koruma emirleri tek bir atomik işlem​
+​değildir​​5​​. Giriş emri eşleştikten birkaç milisaniye​​sonra ani bir fiyat sıçraması yaşanırsa,​
+​gönderilen STOP_MARKET emri -2021 (Order would immediately trigger) hatasıyla reddedilebilir​
+​ve pozisyon tamamen korumasız (naked) kalabilir. Ayrıca şartnamede bu emirlerin workingType​
+​parametresinin CONTRACT_PRICE (son işlem fiyatı) mı yoksa MARK_PRICE (adil işaret fiyatı) mı​
+​olduğu ve priceProtect (tetikleme koruması) bayrağının durumu tanımlanmamıştır​​1​​. Likidite​
+​süpürme iğnelerinde haksız tasfiyeden korunmak için priceProtect: true aktif edilmeli ve -2021​
+​ret hatası alındığı milisaniyede pozisyonu derhal kapatan bir istemci taraflı acil durum döngüsü​
+​(fallback panic close) kodlanmalıdır​​5​​.​
+​Makro Piyasa Çapası ve BTC Quad-TF Motoru Denetimi (Bölüm 3)​
+​Şartnamenin 3. bölümü, her 10 saniyede bir arka planda çalışan izole bir iş parçacığının Bitcoin'in​
+​1m, 5m, 15m ve 1h SMA(50) değerlerini ve eğimlerini (Slope) hesapladığını, is_scalp_bullish ve​
+​is_scalp_bearish durumlarına göre zıt yönlü altcoin işlemlerini kesin olarak yasakladığını ve​
+​zaman dilimleri çatıştığında tam nakitte (FLAT) beklediğini belirtmektedir​​1​​:​
+​Bu makro filtreleme kurgusunda üç kantitatif kusur bulunmaktadır. Birincisi, Bölüm 2'deki mimari​
+​şemada "Zero-Lag BTC Gate" olarak adlandırılan bu kalkan, gerçekte 10 saniyelik bir uyku​
+​döngüsüyle (sleep(10s)) çalıştığı için ortalama 5 saniye, maksimum 9.99 saniye örnekleme​
+​gecikmesine (polling aliasing) sahiptir​​1​​. Ayrıca 50​​periyotluk Basit Hareketli Ortalama (SMA(50)),​
+​tüm barlara eşit ağırlık verdiği için 25 barlık yüksek bir grup gecikmesi (phase lag) taşır. Bitcoin'in​
+​3 saniye içinde sert düştüğü bir likidite şokunda, altcoin motorları 7–8 saniye boyunca bayat​
+​is_scalp_bullish = true bayrağını okuyarak düşen piyasada LONG açma riskine maruz kalır​​1​​.​
+
+
+=== PAGE 5 ===
+​Çözüm, periyodik 10 saniyelik hesaplama yerine btcusdt@aggTrade akışına bağlı üstel ağırlıklı​
+​EMA(34) veya HMA(34) filtresiyle her tikte​
+​karmaşıklıkta​​anlık güncelleme yapmaktır.​
+​İkincisi, formüldeki​
+​ve​
+​eşiklerinin birimsizlik​​ve ölçek​
+​sorunudur​​1​​. Eğer eğim ham fiyat farkı (​
+​) olarak hesaplanıyorsa,​
+​Bitcoin $90,000 seviyesindeyken $0.05'lik bir değişim (0.000055% yani 0.0055 baz puan)​
+​pratikte sıfırdır ve en ufak gürültüde ihlal edilir​​2​​.​​Eğim mutlaka varlık fiyatından bağımsız olarak​
+​normalize edilmiş baz puan (bps/bar) veya​
+​oranı​​cinsinden tanımlanmalıdır:​
+​Üçüncüsü, zaman dilimlerinden herhangi biri çatıştığında sistemin tamamen nakitte (FLAT)​
+​beklemesi kuralının​​1​​yarattığı yatay piyasa felcidir.​​Kripto piyasalarında zamanın yaklaşık​
+​%60–65'inde Bitcoin yatay bir konsolidasyon bandında salınır ve​
+​fiyatı 1m SMA(50)​
+​ortalamasını dakikada birkaç kez yukarı-aşağı keser. Bu durum 13 altcoin'in tamamında sinyal​
+​üretimini kilitleyerek işlem sayısını günde ~6 işleme düşüren ana etmeni oluşturmaktadır​​1​​. Oysa​
+​BTC düşük volatiliteli nötr rejimdeyken, kendi özel katalizörü veya kurumsal emir akışı nedeniyle​
+​güçlü Göreli Güç (Relative Strength) sergileyen altcoinlerde bağımsız alfa fırsatları doğmaktadır.​
+​Üçlü Ortogonal Strateji Sepeti ve Sinyal Matematiği Denetimi (Bölüm​
+​4)​
+​Şartnamenin 4. bölümünde tanımlanan üç rejimin matematiksel kuralları incelendiğinde,​
+​stratejilerin sinyal kalitesi ile icra zamanlaması arasında yapısal çelişkiler gözlemlenmektedir​​1​​. Üç​
+​rejimde de mum kapanışı (​
+​,​
+​,​
+​)​
+​kurallarının zorunlu tutulması, botu 5 dakikalık mumun kapandığı 00.000 milisaniyesinde tüm​
+​perakende botlarla aynı anda likidite talep etmeye zorlamakta ve emir defteri derinliğinin en ince​
+​olduğu mum geçiş anında Taker kaymasını maksimize etmektedir​​1​​.​
+​Strateji Rejimi ve​
+​Ajan Kodu​
+​Mevcut Giriş​
+​Koşulları​
+​(Şartname v10.2)​
+​Tespit Edilen​
+​Mikroyapısal Açık​
+​ve Kör Nokta​
+​Kantitatif​
+​Parametre ve İcra​
+​Optimizasyonu​
+​Rejim 1: Likidite ve​
+​Fitil Süpürme​
+​(Ajan-040)​
+​,​
+​,​
+​Close < Open​
+​(kırmızı gövde​
+​kapanışı) şartı 5​
+​dakikalık mumun​
+​Mum kapanışı​
+​yerine alt-mum​
+​(sub-bar) tetikleme:​
+​Fiyat​
+
+
+=== PAGE 6 ===
+​,​
+​,​
+​1​
+​bitmesini bekler​​1​​.​
+​Sert süpürmelerde​
+​fiyat tepeyi süpürüp​
+​%0.8–%1.5​
+​düştükten sonra​
+​mum kapanır; bu​
+​durum giriş fiyatını​
+​geciktirir ve stop​
+​mesafesini şişirir.​
+​seviyesini aşıp emir​
+​defteri CVD/OFI​
+​negatif uyumsuzluk​
+​verdiğinde ve​
+​altına​
+​geri sarktığında​
+​intrabar GTX Maker​
+​limit emirle giriş​​5​​.​
+​Rejim 2:​
+​Momentum &​
+​Donchian Kırılımı​
+​(Ajan-433)​
+​,​
+​,​
+​,​
+​1​
+​üst​
+​sınırı "tükenişten​
+​kaçınma" amacıyla​
+​konulmuş olsa da​​1​​,​
+​5 dakikalık grafikte​
+​gerçek kurumsal​
+​12-bar zirve​
+​kırılımları​
+​gerçekleştiği anda​
+​değerini​
+​matematiksel olarak​
+​63–74 bandına taşır.​
+​62 altında kalan​
+​kırılımlar çoğunlukla​
+​düşük momentumlu​
+​sahte kırılımlardır​
+​(fakeout).​
+​Statik​
+​üst​
+​sınırı kaldırılarak​
+​ve​
+​bandına çekilmeli;​
+​tükeniş kontrolü RSI​
+​yerine mumun​
+​volatilite-normalize​
+​uzama oranıyla (​
+​)​
+​yapılmalıdır.​
+​Rejim 3: Dinamik​
+​EMA21 Pullback​
+​Avcısı​
+​,​
+​,​
+​,​
+​,​
+​,​
+​Güçlü trendlerde​
+​'e ilk​
+​dokunuşta yüksek​
+​olasılıklı tepki gelir;​
+​ancak 5 dakikalık​
+​mumun kırmızı​
+​kapanmasını (​
+​) beklemek​​1​​geri​
+​çekilme (pullback)​
+​fiyat avantajını​
+​ortadan kaldırır ve​
+​Trend rejimi (​
+​) ve Hawkes emir​
+​akışı​
+​onaylandığında,​
+​mum kapanışı​
+​beklenmeden​
+​seviyesine​
+​doğrudan pasif​
+​Maker (GTX) limit​
+​emir konularak hem​
+​en iyi fiyat hem de​
+​Maker komisyon​
+
+
+=== PAGE 7 ===
+​, Skor​
+​1​
+​işlemi geç kalmış​
+​piyasa emriyle​
+​(Taker) kovalamaya​
+​zorlar.​
+​avantajı alınmalıdır​​5​​.​
+​Pine Script​
+​Dinamik Bant ve​
+​Pivotlar​
+​Bölüm 2 ve 4'te​
+​"Pine Script Dinamik​
+​Bant Kontrolü /​
+​Turuncu Tavan /​
+​Mavi Taban"​
+​kullanımı​​1​
+​Rust çekirdeğinde​
+​TradingView Pine​
+​Script göstergesinin​
+​nasıl hesaplandığı,​
+​pivot tepe/dip​
+​tespitinde sağ-bar​
+​gecikmesi veya​
+​yeniden boyama​
+​(repainting /​
+​look-ahead bias)​
+​olup olmadığı​
+​tanımlanmamıştır​​1​​.​
+​Pivot direnç ve​
+​destek seviyeleri​
+​kesinlikle geleceği​
+​görmeyen​
+​(non-repainting)​
+​nedensel (causal)​
+​yuvarlanan yerel​
+​ekstremum veya​
+​seanslık​
+​bantları olarak açık​
+​matematiksel​
+​formülle​
+​tanımlanmalıdır.​
+​Mikroyapı, Güvenlik Kalkanları ve Ampirik Performans Muhasebesi​
+​Denetimi (Bölüm 5, 6 ve 7)​
+​Şartnamenin 5., 6. ve 7. bölümlerindeki emir akışı değişkenleri, güvenlik kalkanları ve icra​
+​muhasebesi incelendiğinde dört önemli yapısal açık öne çıkmaktadır​​1​​:​
+​Birincisi, API içi mikroyapı metriklerinin (live_delta_oi_pct ve live_top_trader_long_pct) zaman​
+​çözünürlüğü uyumsuzluğudur. Şartnamede bu iki değişkenin son 5 dakikadaki Açık Pozisyon​
+​(Open Interest) değişimini ve Binance Lider Trader Long oranını ölçtüğü belirtilmektedir​​1​​.​
+​Binance Futures API'sinde openInterestHist ve topLongShortPositionRatio uç noktaları 5​
+​dakikalık periyotlarla ve genellikle 30 ila 90 saniyelik yayın gecikmesiyle güncellenir. Buna karşılık​
+​aggTrade üzerinden hesaplanan live_taker_buy_pct milisaniyelik gerçek zamanlı bir veridir​​1​​.​
+​Gerçek zamanlı fiyat aksiyonunu gecikmeli 5 dakikalık Top Trader oranıyla ağırlıklandırmak​
+​eşzamanlılık (synchronicity) hatası yaratır. Açık Pozisyon verisi, gecikmeli geçmiş uç noktası​
+​yerine GET /fapi/v1/openInterest uç noktasından her 3–5 saniyede bir çekilerek yerel dairesel​
+​tamponda (VecDeque) anlık 60 saniyelik türev (​
+​) olarak​​hesaplanmalıdır​​1​​.​
+​İkincisi, Piyasa Konsensüsü (Market Breadth >= 6) kalkanının yarattığı gecikme ve "İlk Gelen​
+​Paket Yanlılığı"dır (First-Trigger Race Condition)​​1​​.​​13 aktif pariteden en az 6 tanesinin aynı anda​
+​mutabakatta olmasını şart koşmak​​1​​, piyasa dönüşlerinin​​erken aşamasını kaçırmaya neden olur;​
+​çünkü kripto piyasasında likidite önce öncü paritelere (SOL, SUI, PEPE) girer, 6 paritenin​
+​hizalanması ise hareketin doygunluk evresinde gerçekleşir. Daha da önemlisi, 6. parite koşulu​
+​sağladığı milisaniyede Market Breadth >= 6 kilidi açılır ve TCP soketinden paketi ilk okunan parite​
+
+
+=== PAGE 8 ===
+​1 Single Trade Max slotunu​​1​​anında kapar. Bu yarış durumunda (race condition), Skor 74 olan​
+​zayıf bir sinyal milisaniyeler önce geldiği için açılırken, 20 milisaniye sonra gelen Skor 96'lık A+​
+​sinyal slot dolu olduğu için reddedilir.​
+​Üçüncüsü, Haber/Balina Scout Radar (live_scout_score_boost) kalkanının tek yönlü çalışmasıdır.​
+​TreeNews WebSocket üzerinden gelen kötü haber veya protokol açığı durumunda skora -40​
+​Puan VETO uygulanması​​1​​yeni işlem açılmasını engeller;​​ancak kötü haber geldiği saniyede​
+​halihazırda açık olan bir pozisyonu acil kapatan (Panic Flatten) bir mekanizma tanımlanmamıştır​​1​​.​
+​Açık bir LONG pozisyon varken borsaya veya ilgili altcoine yönelik bir hack/delist haberi​
+​düştüğünde, bot yeni işlem açmamakta fakat mevcut pozisyonu stop-loss seviyesine çarpana​
+​kadar zararda tutmaktadır.​
+​Dördüncüsü, sunucu taraflı stop emirlerinin güncellenmesi sırasındaki durum senkronizasyonu​
+​(state desynchronization) riskidir. İşlem açıldığında borsaya gönderilen STOP_MARKET emri,​
+​fiyat​
+​kâra ulaştığında Erken Başabaş Kilidi ile​
+​seviyesine,​
+​kârda ise​
+​takip mesafesine çekilmektedir​​1​​.​​Eğer​
+​Rust motoru bu güncellemeyi "önce eski stop emrini iptal et (order.cancel), sonra yeni stop emri​
+​gönder (order.place)" sırasıyla yapıyorsa, iki istek arasındaki ağ gecikmesi penceresinde​
+​pozisyon tamamen korumasız kalır ve o milisaniyede yaşanacak bir bağlantı kopması sermayeyi​
+​tasfiye riskine sokar​​5​​. Ayrıca STOP_MARKET ve TAKE_PROFIT_MARKET​​emirleri​
+​closePosition=true ile gönderildiğinde quantity veya reduceOnly parametreleriyle birlikte​
+​kullanılamaz​​15​​; pozisyon kapandığında karşı bacakta​​kalan açık koşullu emirlerin derhal​
+​temizlenmesi zorunludur.​
+​Bölüm 8 Denetim Sorularının Derinlemesine Kantitatif​
+​Çözümlemesi​
+​Soru 1: Mikro-Sermaye Dinamiği, Minimum Nosyonel Kısıtı ve Kaldıraç​
+​Marjı Sıkışması​
+​Şartnamenin 8. bölümündeki ilk denetim sorusu; $10–​
+​) kaldıraç marjı sıkışması yaşanıp yaşanamayacağını sorgulamaktadır​​1​​.​
+​Kantitatif risk analizi sonucunda kesin yanıt​​evet​​olarak belirlenmiştir: Sistem mevcut formülüyle​
+​hem dar stoplarda şiddetli bir​​Kaldıraç Marjı Sıkışması​​(-2019 Margin is insufficient), hem geniş​
+​stoplarda​​Minimum Nosyonel İhlali​​(-4164 MIN_NOTIONAL),​​hem de yüksek birim fiyatlı​
+​paritelerde​​Adım Büyüklüğü Kuantizasyon Çöküşü​​(LOT_SIZE​​stepSize) yaşamaktadır​​2​​.​
+​Sermaye​
+​, izole kaldıraç​
+​, maksimum risk bütçesi​
+​ve yüzdesel stop mesafesi​
+​olarak tanımlandığında,​​teorik olarak​
+​gereken nosyonel pozisyon büyüklüğü (​
+​) ve gereken​​başlangıç marjini (​
+​) şu​
+​denklemlerle belirlenir​​1​​:​
+
+
+=== PAGE 9 ===
+​Binance USDT-M Vadeli İşlemler eşleşme motorunun uygulanabilirlik bölgesi (feasible region) iki​
+​sert sınırla kuşatılmıştır: üst sınırda hesabın maksimum kaldıraç kapasitesi​
+​2​​ve alt sınırda reduceOnly olmayan tüm​
+​yeni emirler için zorunlu minimum nosyonel büyüklük​
+​2​​. Bu iki eşitsizlik​
+​birleştirildiğinde, $10 sermaye ve​
+​kaldıraç için​​sistemin matematiksel olarak hatasız​
+​çalışabileceği​​Fizibilite Koridoru​​yalnızca şu dar​​aralıktadır​​2​​:​
+
+
+=== PAGE 10 ===
+
+
+=== PAGE 11 ===
+​Yukarıdaki matematiksel yapı dört kritik operasyonel arıza üretmektedir. Birinci arıza, dar​
+​stoplarda yaşanan kaldıraç marjı sıkışmasıdır (​
+​).​​5 dakikalık sıkı bir scalp​
+​işleminde veya Confluence Sniper kurgusunda stop mesafesi %0.28 olarak belirlendiğinde,​
+​$0.25 risk bütçesini tam kullanabilmek için gereken nosyonel büyüklük​
+​ve gereken marjin​
+​'dır​​2​​. $10.00​
+​(veya canlı kanıttaki gibi $9.44) bakiyeli bir hesapta​
+​kaldıraçla maksimum nosyonel kapasite​
+​9.44 için $47.20) olduğundan, bot bu emri​​borsaya gönderdiğinde -2019 Margin is​
+​50​. ​00​(
+​insufficient hatası alır​​1​​. Eğer bot pozisyonu $50.00​​tavana kırparsa, alınan gerçek risk %0.28​
+​stopta $0.140 seviyesine, %0.10 stopta ise $0.050 seviyesine düşerek risk/ödül beklentisini​
+​daraltır​​2​​. Üstelik Binance Futures'ta $10.00 bakiye​​ile tam $50.00 nosyonel pozisyon dahi​
+​açılamaz; çünkü borsa emir gönderim anında başlangıç marjininin (Initial Margin = $10.00) yanı​
+​sıra açılış/kapanış tahmini Taker komisyon karşılığını ve emir defteri işaret fiyatı tamponunu​
+​(Open Loss) serbest bakiyeden keser. Dolayısıyla $10.00 kasada gerçek kullanılabilir maksimum​
+​nosyonel sınır yaklaşık​
+​49.00​​seviyesindedir.​
+​48​. ​50–​
+​İkinci arıza, geniş stoplarda yaşanan minimum nosyonel tuzağıdır (​
+​). Yüksek​
+​volatiliteli bir mumda stop mesafesi %6.00, %8.00 veya %10.00 olduğunda, formül sırasıyla​
+​$4.17, $3.12 ve $2.50 nosyonel büyüklük hesaplar​​2​​.​​Bu değerler $5.00 sınırının altında kaldığı için​
+​borsa tarafından -4164 MIN_NOTIONAL hatasıyla reddedilir​​2​​.​​Eğer kod bu hatayı aşmak için emri​
+​$5.00'a yukarı yuvarlarsa, %6.00 stopta gerçek zarar $0.30'a, %8.00 stopta $0.40'a, %10.00​
+​stopta ise $0.50'a çıkarak "25 Cent Hard Dolar Risk Bütçesi" kuralını %100'e varan oranda deler​​1​​.​
+
+
+=== PAGE 12 ===
+
+
+=== PAGE 13 ===
+​Üçüncü arıza, sembol bazlı LOT_SIZE (stepSize) kuantizasyon körlüğüdür. Şartnamedeki 13 aktif​
+​parite listesinde yer alan​​BTCUSDT​, mikro-sermaye​​(​
+​18) ve​
+​kaldıraç kombinasyonunda​
+​10–​
+​matematiksel olarak işlem göremez​​1​​. BTC fiyatı $90,000​​seviyesindeyken Binance Futures'ın​
+​minimum miktar adımı (stepSize) 0.001 BTC'dir ve bu da minimum​​$90.00 nosyonel​​büyüklüğe​
+​karşılık gelir​​2​​. raw_qty = req_notional / price formülü​​aşağı yuvarlandığında (floor) miktar 0.000​
+​BTC olur; yukarı yuvarlandığında (ceil) ise​
+​18.00 marjin) $50.00 maksimum​
+​90​. ​00​𝑛𝑜𝑠𝑦𝑜𝑛𝑒𝑙𝑑𝑒​ğ​𝑒𝑟​(
+​alım gücünü aşar ve her durumda işlem reddedilir​​2​​.​​Benzer şekilde SOLUSDT ($180 fiyat, 0.01​
+​SOL adım = $1.80 basamak) %5.0 stopta​​5​. ​00​ℎ𝑒𝑑𝑒𝑓𝑛𝑜𝑠𝑦𝑜𝑛𝑒𝑙𝑖𝑎​ş​𝑎​ğı​𝑦𝑢𝑣𝑎𝑟𝑙𝑎𝑑​ığı​𝑛𝑑𝑎​0​. ​02​𝑆𝑂𝐿​(
+​3.60 nosyonel) üreterek -4164 MIN_NOTIONAL hatasına düşer​​2​​. Buna karşılık 1000PEPEUSDT (​
+​0.20 adım) ve SUIUSDT ($0.30​​adım) küçük adım büyüklükleri​
+​0​. ​0125​𝑎𝑑​ı​𝑚​), ​𝐷𝑂𝐺𝐸𝑈𝑆𝐷𝑇​(
+​sayesinde $0.25 risk bütçesini yüksek hassasiyetle uygular​​2​​.​
+​Dördüncü arıza, komisyon ve kayma (slippage) içermeyen eksik payda hatasıdır. Mevcut​
+​formülü, stop-loss tetiklendiğinde ödenecek olan​​çift yönlü Taker​
+​komisyonunu (​
+​) ve STOP_MARKET kaymasını (​
+​)​
+​hesaba katmamaktadır​​1​​. Örneğin​
+​iken $50.00 nosyonel​​pozisyon​
+​açıldığında, fiyat stopa değdiğinde $0.25 fiyat zararı + $0.04 komisyon + $0.01 kayma ile toplam​
+​-$0.30 USDT​​net zarar yazılır ve 25 centlik sert bütçe​​%20 aşılır​​1​​.​
+​Parite /​
+​Stop​
+​Senaryosu​
+​Örnek​
+​Fiyat ve​
+​stepSize​
+​Teorik​
+​Nosyonel​
+​(NreqN_{\t​
+​ext{req}}Nr​
+​eq​)​
+​floor​
+​Kuantize​
+​Nosyonel​
+​(Fiyat​
+​Riski)​
+​ceil​
+​Kuantize​
+​Nosyonel​
+​(Fiyat​
+​Riski)​
+​Borsa Kısıt​
+​ve​
+​Komisyon​
+​Dahil​
+​Gerçek​
+​Durum​
+​(C=$10,L=5​
+​×C=\$10,​
+​L=5\times​
+​C=$10,L=5​
+​×)​
+​BTCUSDT​
+​(%1.00​
+​Stop)​
+​90​, ​000/0​. ​001
+​90 adım)​​2​
+​$25.00​​2​
+​0.000)​​2​
+​0​. ​00​(
+​0.900)​​2​
+​90​. ​00​(
+​İmkansız:​
+​floor 0 lot​
+​üretir, ceil​
+​$50 marj​
+​tavanını​
+​aşar​
+​(-2019)​​2​​.​
+​SOLUSDT​
+​180​. ​00/0​. ​01​(
+​$25.00​​2​
+​0.234)​​2​
+​23​. ​40​(
+​0.252)​​2​
+​25​. ​20​(
+​floor​
+
+
+=== PAGE 14 ===
+​(%1.00​
+​Stop)​
+​1.80 adım)​​2​
+​uygulanabili​
+​r; komisyon​
+​dahil​
+​toplam​
+​zarar​
+​-$0.253​
+​USDT​​2​​.​
+​SOLUSDT​
+​(%5.00​
+​Stop)​
+​180​. ​00/0​. ​01​(
+​1.80 adım)​​2​
+​$5.00​​2​
+​$3.60​
+​($0.180)​​2​
+​0.270)​​2​
+​5​. ​40​(
+​floor​​-4164​
+​MIN_NOTI​
+​ONAL​
+​hatası​​verir;​
+​ceil bütçeyi​
+​aşar​​2​​.​
+​SUIUSDT​
+​(%5.00​
+​Stop)​
+​3​. ​00/0​. ​1​(
+​0.30 adım)​​2​
+​$5.00​​2​
+​$4.80​
+​($0.240)​​2​
+​0.255)​​2​
+​5​. ​10​(
+​floor​​-4164​
+​MIN_NOTI​
+​ONAL​
+​hatası​​verir;​
+​$5.25 alt​
+​sınır şarttır​​2​​.​
+​DOGEUSD​
+​T (%2.00​
+​Stop)​
+​0​. ​20/1​. ​0​(
+​0.20 adım)​​2​
+​$12.50​​2​
+​0.248)​​2​
+​12​. ​40​(
+​0.252)​​2​
+​12​. ​60​(
+​OK —​
+​Mikro-serm​
+​aye lot​
+​kuantizasyo​
+​nuna tam​
+​uyumlu​​2​​.​
+​1000PEPE​
+​USDT​
+​(%0.28​
+​Stop)​
+​0​. ​0125/1​. ​0​(
+​0.0125​
+​adım)​​2​
+​$89.29​​2​
+​49​. ​00​𝑇𝑎𝑣𝑎𝑛​(
+​0.137)​​2​
+​49​. ​00​𝑇𝑎𝑣𝑎𝑛​(
+​0.137)​​2​
+​Marj​
+​Sıkışması:​
+​$89.29 talep​
+​edilir,​
+​$49.00​
+​tavana​
+​kırpılır​​2​​.​
+​Bu bulgular doğrultusunda Rust risk motorunda pozisyon büyüklüğü (​
+​), komisyon ve​
+​tahmini kaymayı paydaya ekleyerek ve çift taraflı clamp sınırlarını uygulayarak şu denklemle​
+​hesaplanmalıdır:​
+
+
+=== PAGE 15 ===
+​Eğer​
+​ise veya​
+​ise emir borsaya gönderilmeden yerel​
+​olarak veto edilmelidir​​2​​. Ayrıca kasa​
+​iken BTCUSDT​​ve ETHUSDT aktif işlem​
+​listesinden çıkarılarak yalnızca makro gösterge olarak izlenmelidir​​1​​.​
+​Soru 2: Poisson Lambda Bozunumu, Hawkes Süreçleri ve Dinamik OFI​
+​Eşikleri​
+​Şartnamenin 8. bölümündeki ikinci denetim sorusu; Dixon-Coles veya Hawkes süreçleri göz​
+​önüne alındığında, 5 dakikalık mum kapanışları arasındaki emir defteri mikroyapısında (OFI)​
+​asimetri eşiğinin (​
+​) hareketli standart sapma gibi​​daha dinamik bir eşik değeriyle​
+​güncellenip güncellenmemesi gerektiğini sorgulamaktadır​​1​​.​
+​Kantitatif mikroyapı analizi sonucunda kesin yanıt​​evet, derhal güncellenmelidir​​olarak​
+​belirlenmiştir​​6​​. Sabit 5 dakikalık pencerede hesaplanan​​statik​
+​Taker alım oranı​
+​eşiği; zaman içi üstel hafıza bozunumunu (memory decay) yok sayması, kripto emir​
+​defterlerindeki öz-uyarılmalı (self-exciting) kümelenmeyi kaçırması ve pariteler arası likidite​
+​varyansı farklarını dikkate almaması nedeniyle yüksek oranda yanlış pozitif (Tip-I) ve kaçırılan​
+​sinyal (Tip-II) hatası üretmektedir​​1​​.​
+​Klasik homojen Poisson süreçleri, emir gelişlerinin birbirinden bağımsız ve sabit bir​
+​yoğunluğuna sahip olduğunu varsayar​​6​​. Oysa kripto​​türev piyasalarında piyasa emirleri (market​
+​orders); algoritmik parçalama (TWAP/VWAP child orders), likidasyon şelaleleri ve gecikmeli​
+​arbitraj akışları nedeniyle​​karşılıklı uyarılmalı​​iki değişkenli Hawkes süreçleri (Bivariate​
+​Mutually Exciting Hawkes Processes)​​izler​​6​​. Alış (​
+​) ve satış (​
+​) yönlü işlem​
+​geliş yoğunlukları​
+​ve​
+​şu stokastik denklemle modellenir​​6​​:​
+
+
+=== PAGE 16 ===
+​Burada​
+​bazal (egzojen) geliş hızını,​
+​işlem hacmini,​
+​içsel uyarılma katsayısını​
+​ve​
+​üstel bozunum (hafıza sönümlenme) hızını temsil​​eder (Dixon-Coles modellerindeki​
+​zaman ağırlıklandırma fonksiyonunun mikroyapısal​​karşılığıdır)​​1​​. Mevcut v10.2​
+​şartnamesindeki live_taker_buy_pct değişkeni ise son 300 saniyedeki tüm işlemleri dikdörtgen​
+​bir pencerede (boxcar kernel) eşit ağırlıkla (​
+​) toplamaktadır​​1​​.​
+​Bu statik yaklaşım iki büyük mikroyapısal kör nokta yaratır. İlk kör nokta​​Hayalet Pencere​
+​Etkisidir (Ghost Window / Roll-Off Distortion)​: Mumun​​ilk dakikasında gerçekleşen tekil bir​
+​balina alımıyla 5 dakikalık Taker alım oranı​
+​'e çıkmış,​​ancak son 45 saniyede kurumsal​
+​satışlarla emir defteri tamamen tersine dönmüş olabilir. Düz 5 dakikalık toplamda oran hâlâ​
+​görünür ve bot tam satış baskısının ortasında LONG​​yönlü +8 bonus puanı verir​​1​​. Tam​
+​5. dakika dolup eski balina işlemi pencereden çıktığı saniyede ise hiçbir yeni satış olmamasına​
+​rağmen oran aniden %47'ye çakılır. İkinci kör nokta​​Pariteler Arası Varyans Asimetrisidir​
+​(Cross-Sectional Heteroskedasticity)​: Hawkes dallanma​​oranı (branching ratio)​
+​altında,​
+​işlemlik bir pencerede alım oranı tahmincisinin​​varyansı​
+​ile ölçeklenir. BTCUSDT veya SOLUSDT gibi 5 dakikada​​15,000+ işlemin​
+​geçtiği derin tahtalarda oran dar bir​
+​bandında salınır;​​burada​
+​bile​
+​kurumsal alım baskısını temsil ederken %52 eşiği sinyalleri kaçırır. Buna karşılık APTUSDT veya​
+​NEARUSDT gibi daha sığ tahtalarda sakin saatlerde standart hata genişler ve %52 eşiği​
+​tamamen rastgele gürültüyle (random walk) aşılır​​1​​.​
+​Mimari Çözüm (Üstel Bozunumlu Hawkes-OFI ve Welford Rolling Z-Skoru):​​Sabit​
+​eşiği kaldırılarak, her aggTrade tiki (​
+​anında​
+​hacmi) geldiğinde​
+​zaman karmaşıklığında güncellenen üstel bozunumlu hacim dengesizliği (​
+​) ve​
+​standartlaştırılmış Z-Skoru (​
+​) devreye alınmalıdır​​6​​:​
+
+
+=== PAGE 17 ===
+​Yarı-ömür​
+​(​
+​) seçildiğinde;​
+​(tek kuyruklu %95 güven düzeyi) olduğunda LONG bonusu​​(+8 puan),​
+​olduğunda SHORT bonusu (+8 puan) ve​
+​olduğunda​​aşırı​
+​kurumsal agresyon bonusu (+12 puan) verilmelidir.​
+​Soru 3: Erken Başabaş Kilidi Mesafesi ve Sağ Kuyruk Trend​
+​Kazançlarının Kırpılması​
+​Şartnamenin 8. bölümündeki üçüncü denetim sorusu;​
+​kârda devreye giren ve​
+​net seviyeye çekilen Erken Başabaş Kilidinin (Early​​Breakeven Lock), yüksek​
+​volatiliteli altcoinlerde (PEPE, SUI vb.) erken kâr realizasyonu nedeniyle büyük trend kazançlarını​
+​(fat-tail trends) kırpma eğiliminde olup olmadığını ve gevşetilip gevşetilmemesi gerektiğini​
+​sorgulamaktadır​​1​​.​
+​Kantitatif ve stokastik analiz sonucunda kesin yanıt​​evet, mevcut statik​
+​kilidi sağ kuyruk (fat-tail) trend kazançlarını​​ağır biçimde​
+​kırpmaktadır ve derhal volatilite-uyarlamalı (ATR-ölçekli) iki kademeli yapıya​
+​gevşetilmelidir​​olarak belirlenmiştir​​1​​.​
+​Bu olgunun en somut kanıtı doğrudan şartnamenin 7. bölümündeki canlı mainnet icra kaydında​
+​ve backtest muhasebesinde yer almaktadır: 1000PEPEUSDT SHORT işlemi 0.0052717 fiyatından​
+​açılmış ve yalnızca​​48 saniye​​sonra 0.0052649 fiyatından​​(​
+​fiyat hareketiyle) başabaş​
+​kilidine çarparak kapanmıştır​​1​​. Benzer şekilde 5 günlük​​backtestte 22 kazanan işlemin ortalama​
+​kazancı $0.2241 USDT iken, 9 kaybeden işlemin tam stop riski $0.2500 USDT olmuş ve​
+​gerçekleşen kazanç/kayıp oranı​
+​seviyesinde kalarak​​hedeflenen 1:2.5 –​
+​1:3.5 R:R oranının çok altında gerçekleşmiştir​​1​​.​
+​Bunun matematiksel nedeni​​Stokastik İlk Geçiş Zamanı​​(First-Passage Time)​​olasılığında​
+​yatmaktadır. Fiyat​
+​lehte harekete (Maximum Favorable​​Excursion - MFE) ulaştığı​
+​milisaniyede, stop emri girişin​
+​ilerisine çekilmektedir​​1​​.​​Bu anda anlık fiyat (​
+​) ile yeni stop seviyesi (​
+​) arasındaki mesafe (nefes​​alma tamponu /​
+​breathing buffer​) yalnızca:​
+​kadardır​​1​​. Oysa 1000PEPEUSDT, SUIUSDT, DOGEUSDT ve​​INJUSDT gibi yüksek beta'lı​
+​altcoinlerde 5 dakikalık Ortalama Gerçek Aralık (​
+​) normal piyasa koşullarında​
+​ile​
+​arasında, 1 dakikalık standart gürültü (​
+​)​​ise​
+​ile​
+
+
+=== PAGE 18 ===
+​arasında seyretmektedir​​1​​. Sürüklenmeli Geometrik Brown Hareketi (GBM) altında, pozitif trend​
+​sürüklenmesi (​
+​) devam etse bile, 1 dakikalık volatilitesi​
+​olan bir varlığın​
+​üst kâr hedefine (​
+​) ulaşmadan önce 15 baz puanlık​​(​
+​) alt bariyere çarpma olasılığı​​%78'in üzerindedir​.​​Sonuç​
+​olarak sistem, doğru tahmin ettiği büyük trendlerin neredeyse tamamından ilk 30–90 saniyelik​
+​normal mikroyapısal geri çekilmede​
+​brüt (​
+​net,​​yani ~​
+​0.050 USDT)​
+​0​. ​025–​
+​kârla erken atılmakta, ancak ters giden işlemlerde tam -$0.25 USDT (artı komisyon) zarar​
+​yazmaya devam etmektedir​​1​​.​
+​Mimari Çözüm (İki Kademeli ATR-Ölçekli Dinamik Kalkan):​
+​Statik​
+​kilidi yerine her paritenin anlık 5 dakikalık​​volatilitesine (​
+​) uyum sağlayan iki kademeli bir mekanizma uygulanmalıdır:​
+​1.​ ​Kademe 1 (Yarı-Risk Kalkanı / Soft Risk Halving):​​Fiyat lehte​
+​ilerlediğinde stop doğrudan​
+​'e​
+​çekilmez; bunun yerine başlangıçtaki stop mesafesi​​%50 oranında daraltılır​​(​
+​). Böylece işlemin doğal geri çekilme (pullback)​
+​yapmasına geniş alan tanınırken, olası maksimum zarar $0.25 USDT'den $0.125 USDT'ye​
+​indirilir.​
+​2.​ ​Kademe 2 (Tam Komisyon Korumalı BE Kilidi ve Kısmi Maker Realizasyon):​​Fiyat lehte​
+​ilerlediğinde, pozisyonun %35'i tahtadaki pasif​
+​Maker limit emriyle realize edilir ve kalan %65'lik kısmın stop seviyesi​
+​seviyesine kilitlenir. Bu anda anlık fiyat ile başabaş​​stopu​
+​arasında en az​
+​nefes alma alanı kalır ve​
+​üzerindeki​
+​sağ kuyruk trendleri kesintisiz yakalanır​​1​​.​
+​Soru 4: Confluence Sniper Güvenliği ve Kurumsal Likidite Vakumu​
+​Koruması​
+​Şartnamenin 8. bölümündeki dördüncü denetim sorusu; 5m SMA(50) ve Pivot Direncin %0.25​
+​bandında çakıştığı durumlarda mavi taban kırılımını beklemeden en tepeden girilen Confluence​
+​Sniper kurgusunun, ani bir kurumsal likidite vakumunda (Short Squeeze) ek bir koruma​
+​gerektirip gerektirmediğini sorgulamaktadır​​1​​.​
+​Mikroyapısal denetim sonucunda kesin yanıt​​evet, zorunlu​​olarak ek koruma gerektirir​​olarak​
+​belirlenmiştir​​1​​. Yapısal taban kırılımı (market structure​​break) beklenmeden doğrudan direnç​
+​kümesinden karşıt (fade) işlem açmak, kurumsal "Emilim ve Sıkıştırma" (Absorption & Short​
+​Squeeze) algoritmalarının birincil av sahasıdır.​
+​Rejim 1 (Ajan-040) şartnamesinde SHORT işlemi için​
+​,​
+
+
+=== PAGE 19 ===
+​,​
+​ve​
+​koşulları aranmakta; 5m​
+​SMA(50) ile Pivot Direnç %0.25 yakınlıkta çakıştığında skora +10 ekstra puan eklenerek en​
+​tepeden girilmektedir​​1​​. Ancak vadeli işlem emir defteri​​mikroyapısında üst fitilli kırmızı bir 5m​
+​mumu iki tamamen zıt mekanizmadan doğabilir:​
+​●​ ​Senaryo A — Gerçek Likidite Süpürmesi ve Tükeniş (True Sweep & Exhaustion):​​Fiyat​
+​üzerindeki alım yönlü stop emirlerini (buy-stops)​​süpürür, agresif alıcılar​
+​tükenir, pasif kurumsal satış duvarı kontrolü ele alır ve fiyat hızla düşer.​
+​●​ ​Senaryo B — Kurumsal Emilim ve Yay Sıkışması (Institutional Absorption & Coiling​
+​Squeeze):​​Kurumsal bir alıcı​
+​ve Pivot Direnç seviyesindeki​​pasif satış duvarını​
+​(limit asks) eritir; anlık kâr satışlarıyla mum hafifçe kırmızı kapanır ve %18'lik bir üst fitil​
+​oluşur, ancak agresif alıcılar tahtanın hemen altında pasif alış duvarı (bid stacking) örmeye​
+​devam etmektedir. Bir sonraki mum açıldığı saniyede, erken SHORT açanların stop​
+​emirleri (​
+​seviyesinin hemen üstü) yeni bir likidite​​yakıtı oluşturur ve fiyat saniyeler​
+​içinde %1.5–%3.0 yukarı patlayarak (Short Squeeze / Likidite Vakumu) STOP_MARKET​
+​emrinde ağır kayma (slippage) yaratır.​
+​Confluence Sniper İçin 4 Katmanlı Zorunlu Short Squeeze Güvenlik Duvarı:​
+​1.​ ​Fitil İçi Kümülatif Hacim Deltası (Wick CVD) ve Emir Defteri Dengesizliği (​
+​)​
+​Veto Kalkanı:​​Süpürme mumunun üst fitili oluşurken​​(fiyat​
+​üzerindeyken)​
+​geçen işlemlerin net deltası ile kapanış anındaki ilk 5 kademe emir defteri dengesizliği (​
+​) kontrol edilmelidir. Gerçek bir ret mumunda fitil​​tepesinden​
+​kapanışa kadar agresif satış baskısı hakimdir (​
+​ve​
+​). Eğer​
+​mum kırmızı kapanmasına rağmen​
+​ise (alıcılar tahtanın​​altına kalın​
+​limit alış duvarı koymuşsa), bu bir kurumsal emilim tuzaktır ve Confluence Sniper girişi​
+​kesinlikle vetolanmalıdır.​
+​2.​ ​Açık Pozisyon (​
+​) ve Negatif Fonlama Oranı (Crowded​​Short) Çapraz Filtresi:​
+​Şartnamede​
+​koşulu her zaman +7 bonus puan vermektedir​​1​​.​​Oysa​
+​fiyat dirençteyken​
+​hızla artıyor (​
+​) ancak aynı​​anda anlık​
+​fonlama oranı (Funding Rate) negatifse (​
+​) veya Vadeli-Spot​​Bazı (​
+​) negatifse, piyasada aşırı kalabalık bir perakende​​short birikimi var​
+​demektir. Bu durumda piyasa yapıcılar shortları tasfiye etmek için fiyatı yukarı sürecektir;​
+​SHORT girişi yasaklanmalıdır.​
+​3.​ ​Canlı Tasfiye Akışı (!forceOrder@arr) Kalkanı:​​Binance​​WebSocket üzerinden sunulan​
+​tüm piyasa zorunlu tasfiye akışı (!forceOrder@arr) dinlenmelidir. Eğer ilgili paritede veya​
+​BTC'de son 30 saniye içinde BUY yönlü zorunlu tasfiye (yani short pozisyonların​
+​patlatılması) gerçekleşmişse, sıkıştırma şelalesi halen aktiftir; son tasfiye emrinden​
+​itibaren en az 45 saniye geçmeden SHORT açılmamalıdır.​
+
+
+=== PAGE 20 ===
+​4.​ ​15 Saniyelik Mikro-Hız (vel_15s) ve priceProtect Kilidi:​​Şartnamede izlenen 15 saniyelik​
+​mikro-hız vektörü​​1​​emir gönderim milisaniyesinde denetlenmeli;​​fiyat son 15 saniyede​
+​dirence doğru hızlanarak yükseliyorsa (​
+​) emir bekletilmeli​​ve sunucu​
+​taraflı STOP_MARKET emrinde priceProtect: true​​5​​zorunlu​​tutulmalıdır.​
+​Yüksek İşlem Sayısı ve Yüksek Kârlılık İçin Geliştirme​
+​Mimarisi (v11.0 Yol Haritası)​
+​Sistemin 5 günde yalnızca 31 işlem (günde ~6.2 işlem) açması ve ürettiği brüt kârın %42.91'ini​
+​Taker komisyonuna kaybetmesi​​1​​, yüksek sermaye bileşik​​büyümesinin (compounding) önündeki​
+​iki ana engeldir. İşlem frekansını​​günde 45–80+ kaliteli​​işlem​​bandına taşırken işlem başına net​
+​beklentiyi iki katına çıkarmak için, tamamen Binance API mekaniklerine ve kantitatif mikroyapı​
+​matematiğine dayanan beş stratejik reform uygulanmalıdır.​
+
+
+=== PAGE 21 ===
+​Taker İcradan Maker İcraya Geçiş: GTX Post-Only ve priceMatch​
+
+
+=== PAGE 22 ===
+​Motoru​
+​Mevcut sistemde tüm girişler ve çıkışlar piyasa emriyle (Taker) yapılmakta, işlem başına​
+​gidiş-dönüş​
+​(8 baz puan) komisyon ödenmektedir​​1​​.​​Oysa Binance​
+​USDⓈ-M Vadeli İşlemler piyasasında standart Maker komisyonu %0.02 (BNB indirimiyle​
+​%0.018, gidiş-dönüş 3.6–4.0 baz puan) seviyesindedir. Binance WebSocket API​
+​(wss://ws-fapi.binance.com/ws-fapi/v1) üzerinde bulunan order.place ve order.modify uç​
+​noktaları, kurumsal yürütme algoritmaları için iki yerleşik parametre sunmaktadır​​5​​:​
+​Birincisi, timeInForce: "GTX" (Good-Till-Crossing / Post-Only) parametresidir; bu parametre​
+​emrin kesinlikle tahtaya yapıcı (Maker) olarak yazılmasını garanti eder ve eğer fiyat anlık olarak​
+​eşleşip Taker olacaksa borsa emri otomatik olarak iptal eder​​5​​. İkincisi, priceMatch (QUEUE,​
+​QUEUE_5, OPPONENT) parametresidir; bu özellik, yerel emir defteri fiyatını manuel​
+​hesaplamaya gerek kalmadan Binance eşleşme motorunun emri doğrudan en iyi alış/satış​
+​kademesinin en önüne (QUEUE) yerleştirmesini sağlar​​5​​.​
+​Rejim 1 (Fitil Süpürme) ve Rejim 3 (EMA21 Pullback) doğası gereği fiyatın geri çekilmesini veya​
+​fitil atmasını bekleyen kurgulardır​​1​​. Mum kapanışında​​Taker emir göndermek yerine, sinyal​
+​oluştuğu anda timeInForce: "GTX" ve priceMatch: "QUEUE" ile en iyi kademeye Maker limit emri​
+​konulmalıdır​​5​​. Eğer fiyat 800 milisaniye içinde uzaklaşırsa,​​IP ağırlığı 0 olan order.modify​​5​
+​kullanılarak limit fiyat 1 tik güncellenir (kovalama /​​limit chase​); 2.5 saniye içinde dolmazsa ve​
+​sinyal skoru​
+​ise kalan miktar Taker olarak alınır.​​Kâr al (Take Profit) hedefi ise sunucu​
+​taraflı TAKE_PROFIT_MARKET (Taker) yerine, tahtada bekleyen LIMIT (reduceOnly: true,​
+​timeInForce: "GTC") emri olarak yerleştirilirken acil durum STOP_MARKET emri borsada​
+​korunur​​5​​. Yalnızca kâr al çıkışlarının ve girişlerin​​%65'inin Maker yapılması, ortalama gidiş-dönüş​
+​komisyon yükünü 8.0 baz puandan 4.2 baz puana düşürerek 5 günlük backtestteki net kârı +​
+​2.08'e (%36 artış) taşır​​1​​. Daha da önemlisi,​​komisyon engeli yarıya indiği için daha​
+​1​. ​53'​𝑡𝑒𝑛​ +
+​önce komisyonu kurtarmadığı gerekçesiyle elenen 18–25 baz puanlık hızlı mikro-scalp fırsatları​
+​kârlı bölgeye geçer ve işlem sayısını doğrudan artırır.​
+​Tek Pozisyon Darboğazının Serbest-Rulo ve Beta-Nötr Çift-Slot​
+​Mimarisine Evrimi​
+​Bölüm 1'deki "Aynı anda yalnızca TEK BİR AKTİF POZİSYON açılır" kuralı​​1​​korelasyon riskini​
+​önlemek için tasarlanmış olsa da, Bölüm 6'daki "6 Saatlik Zaman Kalkanı (Time-Stop)"​​1​​ile​
+​birleştiğinde sistemin işlem sayısını boğan ana darboğaza dönüşmektedir. Yatay kalan tek bir​
+​işlem saatlerce pozisyon slotunu işgal etmekte ve bu sürede diğer 12 paritede oluşan tüm​
+​yüksek skorlu sinyaller reddedilmektedir. Korelasyon riskini artırmadan işlem sayısını 2.5 katına​
+​çıkarmak için üç mekanizma devreye alınmalıdır:​
+​1.​ ​Başabaş Sonrası Slot Serbest Bırakma (Free-Roll Slot Unlocking):​​Açık olan bir işlem​
+​Başabaş Kilidine (BE Lock) ulaştığı ve borsa üzerindeki STOP_MARKET emri komisyon dahil​
+​kârlı bölgeye çekildiği milisaniyede, o pozisyonun​​Açık Riski (Risk-at-Stake)​
+​matematiksel olarak $0.00 USDT​​olur​​1​​. Bu anda söz​​konusu pozisyon "Serbest-Rulo​
+
+
+=== PAGE 23 ===
+​(Free-Roll)" statüsüne geçirilir ve sistemin yeni bir işlem açmasına (serbest marjin elverdiği​
+​ölçüde) derhal izin verilir. Piyasa sert biçimde çökse dahi ilk pozisyon kârda kapanacağı​
+​için çoklu tasfiye (cascading liquidation) riski sıfırdır​​1​​.​
+​2.​ ​Beta-Nötr Karşıt Slot (Orthogonal Long + Short Pairing):​​Eğer açık olan pozisyon​
+​LONG ise ve görece zayıf bir altcoinde yüksek skorlu (​
+​) bir SHORT sinyali oluşursa,​
+​sistemin eşzamanlı olarak 1 LONG + 1 SHORT taşımasına izin verilmelidir. Bu yapı piyasa​
+​yönü riskini (market beta) doğal olarak hedge ederken işlem frekansını ikiye katlar.​
+​3.​ ​20 Dakikalık İvme Zaman Kalkanı (Momentum Time-Stop):​​5 dakikalık grafikte scalp​
+​yapan bir algoritmanın 6 saat (72 adet 5 dakikalık mum) boyunca hareket etmeyen bir​
+​pozisyonda beklemesi​​1​​sermaye devir hızını (Capital​​Velocity) öldürür. Canlı​
+​1000PEPEUSDT işlemi 48 saniyede sonuçlanmıştır​​1​​. Zaman​​kalkanı​​20 dakikaya (4 adet​
+​5m mumu)​​indirilmelidir: Eğer işlem açıldıktan sonra​​20 dakika içinde lehte en az​
+​ilerleme kaydedememişse, kurumsal momentum tezi​​çürümüştür;​
+​pozisyon priceMatch: "QUEUE" Maker limit emriyle başabaş/minimum maliyetle​
+​kapatılarak sermaye yeni sinyaller için serbest bırakılır​​5​​.​
+​Yatay Piyasa Kilidini Açan Rejim 4 VWAP Mean-Reversion ve Göreli​
+​Güç Modülü​
+​Bölüm 3'teki BTC Quad-TF kuralı gereği, BTC'nin 1m, 5m ve 15m ortalamaları birbiriyle​
+​çeliştiğinde sistem tamamen nakitte (FLAT) beklemektedir​​1​​.​​Kripto piyasalarında zamanın​
+​yaklaşık %60–65'inde 1m, 5m ve 15m ortalamaları tam hizalı değildir. Botun günün üçte ikisinde​
+​atıl kalmasını önlemek için BTC'nin yatay/nötr olduğu (is_btc_chop: 1m, 5m ve 15m EMA34​
+​bantlarının %0.25 içinde sıkıştığı ve​
+​olduğu) durumlarda​​iki özel​
+​modül devreye alınmalıdır:​
+​Birincisi​​Altcoin Göreli Güç (Relative Strength /​​RS Alfa) Modülüdür​: BTC yatayken kendi​
+​başına güçlü kurumsal emir akışı yaşayan (​
+​değeri​
+​ayrışan ve Hawkes​
+​olan) altcoinlerde BTC trend​​hizalanması​
+​aranmaksızın Rejim 1, 2 ve 3 işlemlerine izin verilir. İkincisi​​Rejim 4 (Seanslık VWAP​
+​Bantları & Emir Defteri Emilimi Mean-Reversion) Stratejisidir​:​​BTC yatayken kırılım (Breakout)​
+​stratejileri çalışmaz; ancak fiyatın seanslık Hacim Ağırlıklı Ortalama Fiyatın (​
+​)​
+​standart sapma bandına değdiği,​
+​(veya​
+​) olduğu​​ve emir defteri ilk 5​
+​kademe dengesizliğinin (​
+​) merkeze dönüş yönünde​
+​asimetri gösterdiği anlarda​
+​VWAP merkezine doğru GTX Maker emirleriyle yüksek kazanma oranlı ortalamaya dönüş​
+​(mean-reversion) işlemleri açılır​​5​​.​
+​Tik-Tabanlı Ön-Tetikleme ve 100 Milisaniyelik Çapraz-Parite Sıralama​
+​Hakemi​
+
+
+=== PAGE 24 ===
+​Mevcut sistemde sinyallerin 5 dakikalık mum kapanışında değerlendirilmesi ve Market Breadth​
+​>= 6 olduğunda TCP soketinden ilk gelen paritenin pozisyonu kapması​​1​​hem gecikme hem de​
+​seçim yanlılığı yaratmaktadır. Bunun yerine iki mikroyapısal mekanizma uygulanmalıdır:​
+​İlk olarak,​​Son 5 Saniye Ön-Tetikleme (T-5s Pre-Close​​Trigger)​​kurulmalıdır: 5 dakikalık​
+​mumun kapanmasına 5 saniye kala (dakika 04:55.000), mumun hacmi ve gövdesi %97 oranında​
+​şekillenmiştir. Eğer bu anda Rejim 1 veya Rejim 3 koşulları sağlanıyorsa ve anlık Hawkes​
+​skoru bunu teyit ediyorsa, bot 05:00.000 mum geçişindeki perakende emir yığılmasını​
+​beklemeden 3–5 saniye önce GTX Maker emriyle tahtaya girer​​5​​. İkinci olarak,​​100 Milisaniyelik​
+​Çapraz-Parite Sıralama Penceresi (100ms Cross-Symbol Ranking Arbitrator)​​devreye​
+​alınmalıdır: Herhangi bir paritede geçerli bir sinyal tetiklendiğinde, bot emri anında göndermek​
+​yerine 100 milisaniyelik bir toplama penceresi açar. Bu 100 ms içinde 13 paritenin tamamından​
+​gelen aday sinyaller toplanır ve şu​​Net Alfa Verimlilik​​Skoru (​
+​)​​ile sıralanır:​
+​100 ms sonunda en yüksek​
+​değerine sahip olan parite​​seçilerek icra motoruna gönderilir ve​
+​düşük kaliteli sinyalin slotu işgal etmesi engellenir.​
+​Kesirli Kelly Kriteri ile Sinyal Skoruna Duyarlı Dinamik Risk Bütçesi​
+​Bölüm 7'deki ampirik veriler üzerinden tam Kelly fraksiyonu hesaplandığında (​
+​,​
+​,​
+​), teorik Kelly oranı​
+​(%38.58) çıkmaktadır​​2​​. Mevcut sistemde sınırda kalan​​bir sinyal (Skor 72) ile tüm mikroyapı​
+​filtrelerini tam puanla geçen kusursuz bir sinyal (Skor 98) birebir aynı​
+​sabit risk bütçesini​
+​kullanmaktadır​​1​​. Sermaye büyümesini hızlandırmak ve​​sınır sinyallerin zararını minimize etmek​
+​için risk bütçesi​
+​, sinyal skoruna (​
+​) bağlı olarak​​kademelendirilmelidir:​
+​kasada baz risk​
+​alındığında; Skor 72–76 arası​​sınır sinyallerde risk​
+​bütçesi​​$0.15 USDT​​seviyesine çekilerek sahte kırılımlarda​​kayıp %40 azaltılır, Skor 82–87 arası​
+​standart güçlü sinyallerde​​$0.25 USDT​​korunur, Skor​​90–99 arası A+ Confluence sinyallerinde​
+​ise risk bütçesi​​$0.35 USDT​​seviyesine çıkarılarak​​en yüksek olasılıklı işlemlerde kasa bileşik​
+​büyümesi ivmelendirilir.​
+
+
+=== PAGE 25 ===
+​Önerilen v11.0 Yazılım Mimarisi ve Parametre​
+​Optimizasyon Matrisi​
+​Kilit-Serbest Rust Eşzamanlılık ve Kalıcı WebSocket API Mimarisi​
+​Bölüm 2'de belirtilen Arc<Mutex<T>> yapısı ve REST API v1 emir iletimi​​1​​, yüksek frekanslı tik​
+​akışlarında kilit çekişmesini ve ağ gecikmesini sıfırlamak amacıyla​​Paylaşımsız Aktör​
+​(Shared-Nothing Actor), Atomik Durum Okuma (ArcSwap) ve Kalıcı WebSocket API​
+​(ws-fapi)​​mimarisine dönüştürülmelidir​​4​​.​
+​Bu yeni mimarinin Rust çekirdeğinde uygulanmasında üç temel sistem mühendisliği standardı​
+​işletilmelidir. Birincisi, merkezi Mutex yerine ArcSwap ve izole görevler (tasks) kullanılmasıdır:​
+​BTC Quad-TF Engine ve TreeNews Scout Radar​​1​​verileri​​merkezi bir Mutex içine yazılmaz; bunun​
+​yerine ArcSwap<MacroState> üzerinden yayınlanır ve 13 altcoin iş parçacığı makro durumu sıfır​
+​kilitlenme (Wait-Free okuma) ile nanosaniyeler içinde okur. İkincisi, WebSocket soketlerinde​
+​TCP_NODELAY bayrağı zorunlu olarak aktif edilerek Nagle paket biriktirme algoritması devre dışı​
+​bırakılmalı ve gelen aggTrade, bookTicker ile forceOrder​​16​​mesajları SIMD hızlandırmalı​
+​simd-json kullanılarak önceden tahsis edilmiş (pre-allocated) bellek tamponları üzerinde​
+​ayrıştırılmalıdır. Üçüncüsü, kalıcı ws-fapi oturumu üzerinde Başabaş Kilidi veya Trailing Stop​
+​güncelleneceği zaman, eski stop emri iptal edilip yeni emir açılmaz; bunun yerine doğrudan​
+​order.modify (veya yeni algoOrder yerleştirildikten ve borsadan 200 OK yanıtı alındıktan sonra​
+​eski emrin iptali) uygulanarak korumasız milisaniye penceresi tamamen kapatılır​​4​​.​
+​Sistem Parametreleri Optimizasyon Karşılaştırma Tablosu​
+​Denetim bulguları doğrultusunda, mevcut v10.2 şartnamesindeki parametrelerin yüksek işlem​
+
+
+=== PAGE 26 ===
+​frekansı ve komisyon korumalı v11.0 mimarisine geçiş için güncellenmesi gereken tam listesi​
+​aşağıda sunulmuştur:​
+​Parametre /​
+​Sistem Modülü​
+​Mevcut Değer​
+​(v10.2 Şartnamesi)​
+​Önerilen Optimum​
+​Değer (v11.0)​
+​Kantitatif ve​
+​Mikroyapısal​
+​Gerekçe​
+​AWS Sunucu​
+​Bölgesi​
+​Belirtilmemiş​
+​(Genel AWS EC2)​​1​
+​AWS Tokyo​
+​(ap-northeast-1a)​​3​
+​Binance eşleşme​
+​motoruna ~8–23 ms​
+​gecikme ile erişerek​
+​~250–424 ms'lik​
+​bayat fiyat​
+​kaymasını​
+​(slippage) sıfırlar​​3​​.​
+​Emir İletim​
+​Protokolü​
+​REST API v1 (POST​
+​/fapi/v1/order)​​1​
+​WS API​
+​(wss://ws-fapi.bin​
+​ance.com/ws-fapi/​
+​v1)​​4​
+​Ed25519​
+​session.logon ile​
+​HTTP/TLS yükünü​
+​kaldırır; order.place,​
+​order.modify ve​
+​algoOrder.place ile​
+​milisaniye altı icra​
+​sağlar​​4​​.​
+​İcra Emir Tipi​
+​(Giriş / TP)​
+​%100 Piyasa Emri​
+​(Taker, 8 bps​
+​maliyet)​​1​
+​Maker GTX +​
+​priceMatch:​
+​QUEUE (3.6–4.2​
+​bps)​​5​
+​Brüt kârın %42.91'ini​
+​yutan Taker​
+​komisyonunu​​2​
+​yarıya indirir; dar​
+​hedefli scalp​
+​işlemlerini​
+​matematiksel olarak​
+​kârlı kılar.​
+​Parite Evreni (​10–​
+​30 Kasa)​
+​13 Parite (BTC, ETH,​
+​SOL dahil)​​1​
+​Min Adım​
+​Olan 12​
+​Likit Altcoin​​2​
+​BTCUSDT (​
+​90​𝑚𝑖𝑛𝑙𝑜𝑡​)​𝑣𝑒𝑆𝑂𝐿𝑈𝑆𝐷𝑇​
+​1.80 adım)​
+​kuantizasyon ve​
+​-4164​
+​MIN_NOTIONAL​
+​hatalarını​​2​​ortadan​
+​kaldırır.​
+
+
+=== PAGE 27 ===
+​Pozisyon​
+​Boyutlandırma​
+​(Komisyonsuz,​
+​Kısıtsız)​​1​
+​Dar stoplardaki 5x​
+​marjin sıkışmasını​​2​
+​ve komisyon​
+​kaynaklı bütçe​
+​aşımını önler;​
+​Kelly/Skor bazlı risk​
+​ölçekler (​0​. ​15–​
+​0.35).​
+​Aktif Pozisyon​
+​Kuralı​
+​Katı 1 Single Trade​
+​Max​​1​
+​Free-Roll Kilidi​
+​Açık + Beta-Nötr 2​
+​Slot​
+​BE kilidine geçen​
+​işlemin riski $0​
+​olduğu anda yeni​
+​işlem izni vererek​
+​korelasyon riski​
+​almadan işlem​
+​sayısını 2 katına​
+​çıkarır.​
+​Zaman Kalkanı​
+​(Time-Stop)​
+​6 Saat (360 Dakika /​
+​72 Mum)​​1​
+​20 Dakika (4 Mum)​
+​İvme Kalkanı​
+​20 dakikada​
+​lehte gitmeyen ölü​
+​pozisyonları​
+​kapatarak sermaye​
+​devir hızını​
+​(turnover) 4 kat​
+​artırır.​
+​BTC Makro Çapa​
+​Hesabı​
+​10 sn'de bir​
+​SMA(50) + Yatayda​
+​FLAT​​1​
+​Tik-Bazlı EMA(34)​
+​+ Yatayda RS &​
+​Rejim 4​
+​10 sn örnekleme​
+​gecikmesini sıfırlar;​
+​BTC yatayken​
+​altcoin Göreli Güç​
+​(RS) ve VWAP​
+​Mean-Reversion​
+​işlemlerini açar.​
+​Emir Akışı (OFI)​
+​Eşiği​
+​5m Sabit < %48 / >​
+​%52​​1​
+​Hawkes (​
+​)​
+​6​
+​Eski işlemlerin​
+​hayalet etkisini ve​
+​düşük hacimli​
+​altcoinlerdeki​
+​varyans​
+​gürültüsünü üstel​
+
+
+=== PAGE 28 ===
+​bozunumla​
+​temizler​​6​​.​
+​Erken Başabaş (BE​
+​Lock)​
+​kârda​
+​net​
+​kilit​​1​
+​Kademe 1:​
+​(%50​
+​Risk), Kademe 2:​
+​15 bps'lik dar​
+​tamponun PEPE/SUI​
+​gibi volatil​
+​paritelerde sağ​
+​kuyruk (fat-tail)​
+​trendlerini erken​
+​boğmasını önler​​1​​.​
+​Rejim 2 Breakout​
+​RSI​
+​1​
+​+​
+​Gerçek 12-bar​
+​Donchian​
+​kırılımlarının 62 RSI​
+​üzerinde​
+​gerçekleştiği​
+​gerçeğine uyum​
+​sağlar; zayıf​
+​kırılımları eler.​
+​Confluence Sniper​
+​Kalkanı​
+​5m SMA(50) + Pivot​
+​Direnç (%0.25)​
+​+10 Puan​​1​
+​CVD/OBI Emilim​
+​Veto + Negatif​
+​Fonlama +​
+​!forceOrder​
+​Dirençte satış​
+​duvarının emildiği​
+​(absorption) ve​
+​perakende​
+​shortların​
+​sıkıştırıldığı (Short​
+​Squeeze) anlarda​
+​tepeden girişi​
+​engeller.​
+​Sonuç ve Mühendislik Uygulama Yol Haritası​
+​Yapılan kapsamlı denetim; BINANCE_FUTURES_QUANT_BOT_SPEC.md (v10.2) mimarisinin​
+​mikro-sermaye disiplinini sağlam bir temel üzerine kurduğunu, ancak​​Taker komisyon​
+​erozyonu (%42.91), statik​
+​başabaş kilidinin sağ​​kuyruk kazançlarını erken​
+​kesmesi (​
+​), dar stoplarda 5x kaldıraç marjı sıkışması​​ve tek pozisyon + 6​
+​saatlik zaman kalkanının yarattığı fırsat maliyeti​​nedeniyle potansiyelinin altında çalıştığını​
+​kanıtlamaktadır​​1​​.​
+​Sistemin yüksek işlem frekansı ve yüksek net beklenti (pozitif çarpıklık) ile ölçeklenebilmesi için​
+​mühendislik müdahaleleri üç aşamalı bir sırayla devreye alınmalıdır. İlk aşamada (Acil Risk ve​
+​Borsa Uyumluluk Yaması), pozisyon boyutlandırma formülüne komisyon paydası (​
+
+
+=== PAGE 29 ===
+​) ve çift taraflı clamp (​
+​) eklenmeli,​
+​altı​
+​bakiyelerde BTCUSDT ve ETHUSDT işlem listesinden çıkarılarak -4164 MIN_NOTIONAL ve -2019​
+​marjin hataları tamamen sıfırlanmalıdır​​2​​. İkinci aşamada​​(Altyapı ve İcra Göçü), sunucu​
+​ap-northeast-1a (Tokyo) bölgesine taşınmalı, merkezi Mutex kilitleri ArcSwap ve SPSC halka​
+​tamponlarla değiştirilmeli ve emir iletimi wss://ws-fapi.binance.com/ws-fapi/v1 (GTX Post-Only,​
+​priceMatch: QUEUE ve algoOrder.place) protokolüne geçirilerek işlem başına komisyon yükü​
+​yarıya indirilmelidir​​3​​. Üçüncü aşamada ise (Kantitatif​​Alfa ve Sermaye Hızı Reformu), sabit​
+​%48/%52 OFI eşiği 30 saniye yarı-ömürlü Hawkes​
+​skoruna​​dönüştürülmeli​​1​​, Erken​
+​Başabaş Kilidi iki kademeli​
+​yapısına esnetilmeli,​​Confluence Sniper kurgusuna​
+​CVD/Tasfiye kalkanı eklenmeli ve BE kilidine geçen işlemlerde yeni pozisyon slotunu açan​
+​Free-Roll + 20 Dakika Time-Stop + 100ms Çapraz-Parite Sıralama​​motoru devreye​
+​alınmalıdır.​
+​Alıntılanan çalışmalar​
+​1.​ ​BINANCE_FUTURES_QUANT_BOT_SPEC.md​
+​2.​ ​unknown_url​
+​3.​ ​Binance Server Location — AWS Tokyo - Arbitron App,​
+​https://arbitron.app/learn/binance-server-location​
+​4.​ ​WebSocket API General Info | Binance Developer Docs,​
+​https://developers.binance.com/en/docs/products/derivatives-trading-usds-futur​
+​es/websocket-api-general-info​
+​5.​ ​Trade - Futures (USDS-M) WebSocket API | Binance Developer Docs,​
+​https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading​
+​-usd-s-m-futures/api/ws-api/trade​
+​6.​ ​Limit Order Book Dynamics and Order Size Modelling Using ... - arXiv,​
+​https://arxiv.org/html/2312.08927v3​
+​7.​ ​High-Frequency Trading in Crypto: Latency, Infrastructure, and Reality,​
+​https://medium.com/@laostjen/high-frequency-trading-in-crypto-latency-infrastr​
+​ucture-and-reality-594e994132fd​
+​8.​ ​Binance Server Location · Issue #189 · sammchardy/python ... - GitHub,​
+​https://github.com/sammchardy/python-binance/issues/189​
+​9.​ ​Crypto Exchange Server Locations & Latency Map - Arbitron App,​
+​https://arbitron.app/learn/crypto-exchange-server-locations​
+​10.​​Polymarket Crypto Trading: The Honest Infrastructure Guide,​
+​https://tradoxvps.com/polymarket-crypto-trading-infrastructure/​
+​11.​​How to Place and Cancel Limit Orders on Binance via WebSocket,​
+​https://www.binance.com/en/academy/articles/how-to-place-and-cancel-limit-or​
+​ders-on-binance-via-websocket-api​
+​12.​​Binance Futures Trading Rate Limits,​
+​https://www.binance.com/en/square/post/378638905912128​
+​13.​​API Rate Limits and Weight Management on Binance Futures,​
+​https://nexusbotai.pro/blog/binance-api-rate-limits-weight-management-trading​
+
+
+=== PAGE 30 ===
+​-bots-2026​
+​14.​​[Binance Futures] API change: fix order-count limits (was due 2026,​
+​https://github.com/nautechsystems/nautilus_trader/issues/4395​
+​15.​​Trade - Futures (COIN-M) WebSocket API | Binance Developer Docs,​
+​https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading​
+​-coin-m-futures/api/ws-api/trade​
+​16.​​Spot WebSocket Market Streams | Binance Developer Docs,​
+​https://developers.binance.com/en/docs/catalog/core-trading-spot-trading/api/w​
+​s-streams/~​
+​17.​​Error Codes | Binance Developer Docs,​
+​https://developers.binance.com/en/docs/products/derivatives-trading-usds-futur​
+​es/error-code​
+​18.​​APIError(code=-4164): Order's notional must be no smaller than 5.0,​
+​https://stackoverflow.com/questions/68153864/futures-trading-not-possible-apie​
+​rrorcode-4164-orders-notional-must-be-no​
+​19.​​Forecasting High Frequency Order Flow Imbalance - arXiv,​
+​https://arxiv.org/abs/2408.03594​
+​20.​​Market Data - Futures (USDS-M) WebSocket API,​
+​https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading​
+​-usd-s-m-futures/api/ws-api/market-data​

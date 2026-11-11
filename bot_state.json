@@ -1,0 +1,17 @@
+{
+  "engine_version": "v5.0-DUAL-ENGINE-MAINNET",
+  "balance": 9.88,
+  "peak_equity": 9.88,
+  "max_drawdown_pct": 0.0,
+  "realized_gross_pnl": 0.0,
+  "realized_net_pnl": 0.0,
+  "total_fees_paid": 0.0,
+  "total_trades": 0,
+  "winning_trades": 0,
+  "losing_trades": 0,
+  "reconnect_count": 0,
+  "position": {
+    "side": "Flat"
+  },
+  "closed_trades": []
+}

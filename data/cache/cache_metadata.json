@@ -1,0 +1,164 @@
+{
+  "total_targets": 26,
+  "successful": 26,
+  "failed": 0,
+  "files": {
+    "BTCUSDT_1h": {
+      "symbol": "BTCUSDT",
+      "interval": "1h",
+      "size_bytes": 347300,
+      "path": "E:\\binance_futures_bot\\data\\cache\\BTCUSDT_1h.json"
+    },
+    "BTCUSDT_15m": {
+      "symbol": "BTCUSDT",
+      "interval": "15m",
+      "size_bytes": 338048,
+      "path": "E:\\binance_futures_bot\\data\\cache\\BTCUSDT_15m.json"
+    },
+    "ETHUSDT_1h": {
+      "symbol": "ETHUSDT",
+      "interval": "1h",
+      "size_bytes": 359534,
+      "path": "E:\\binance_futures_bot\\data\\cache\\ETHUSDT_1h.json"
+    },
+    "ETHUSDT_15m": {
+      "symbol": "ETHUSDT",
+      "interval": "15m",
+      "size_bytes": 349590,
+      "path": "E:\\binance_futures_bot\\data\\cache\\ETHUSDT_15m.json"
+    },
+    "SOLUSDT_1h": {
+      "symbol": "SOLUSDT",
+      "interval": "1h",
+      "size_bytes": 333436,
+      "path": "E:\\binance_futures_bot\\data\\cache\\SOLUSDT_1h.json"
+    },
+    "SOLUSDT_15m": {
+      "symbol": "SOLUSDT",
+      "interval": "15m",
+      "size_bytes": 318900,
+      "path": "E:\\binance_futures_bot\\data\\cache\\SOLUSDT_15m.json"
+    },
+    "DOGEUSDT_1h": {
+      "symbol": "DOGEUSDT",
+      "interval": "1h",
+      "size_bytes": 358641,
+      "path": "E:\\binance_futures_bot\\data\\cache\\DOGEUSDT_1h.json"
+    },
+    "DOGEUSDT_15m": {
+      "symbol": "DOGEUSDT",
+      "interval": "15m",
+      "size_bytes": 347259,
+      "path": "E:\\binance_futures_bot\\data\\cache\\DOGEUSDT_15m.json"
+    },
+    "XRPUSDT_1h": {
+      "symbol": "XRPUSDT",
+      "interval": "1h",
+      "size_bytes": 344270,
+      "path": "E:\\binance_futures_bot\\data\\cache\\XRPUSDT_1h.json"
+    },
+    "XRPUSDT_15m": {
+      "symbol": "XRPUSDT",
+      "interval": "15m",
+      "size_bytes": 332842,
+      "path": "E:\\binance_futures_bot\\data\\cache\\XRPUSDT_15m.json"
+    },
+    "LINKUSDT_1h": {
+      "symbol": "LINKUSDT",
+      "interval": "1h",
+      "size_bytes": 333849,
+      "path": "E:\\binance_futures_bot\\data\\cache\\LINKUSDT_1h.json"
+    },
+    "LINKUSDT_15m": {
+      "symbol": "LINKUSDT",
+      "interval": "15m",
+      "size_bytes": 322061,
+      "path": "E:\\binance_futures_bot\\data\\cache\\LINKUSDT_15m.json"
+    },
+    "SUIUSDT_1h": {
+      "symbol": "SUIUSDT",
+      "interval": "1h",
+      "size_bytes": 338728,
+      "path": "E:\\binance_futures_bot\\data\\cache\\SUIUSDT_1h.json"
+    },
+    "SUIUSDT_15m": {
+      "symbol": "SUIUSDT",
+      "interval": "15m",
+      "size_bytes": 326012,
+      "path": "E:\\binance_futures_bot\\data\\cache\\SUIUSDT_15m.json"
+    },
+    "AVAXUSDT_1h": {
+      "symbol": "AVAXUSDT",
+      "interval": "1h",
+      "size_bytes": 309705,
+      "path": "E:\\binance_futures_bot\\data\\cache\\AVAXUSDT_1h.json"
+    },
+    "AVAXUSDT_15m": {
+      "symbol": "AVAXUSDT",
+      "interval": "15m",
+      "size_bytes": 292497,
+      "path": "E:\\binance_futures_bot\\data\\cache\\AVAXUSDT_15m.json"
+    },
+    "NEARUSDT_1h": {
+      "symbol": "NEARUSDT",
+      "interval": "1h",
+      "size_bytes": 315461,
+      "path": "E:\\binance_futures_bot\\data\\cache\\NEARUSDT_1h.json"
+    },
+    "NEARUSDT_15m": {
+      "symbol": "NEARUSDT",
+      "interval": "15m",
+      "size_bytes": 304795,
+      "path": "E:\\binance_futures_bot\\data\\cache\\NEARUSDT_15m.json"
+    },
+    "ADAUSDT_1h": {
+      "symbol": "ADAUSDT",
+      "interval": "1h",
+      "size_bytes": 333732,
+      "path": "E:\\binance_futures_bot\\data\\cache\\ADAUSDT_1h.json"
+    },
+    "ADAUSDT_15m": {
+      "symbol": "ADAUSDT",
+      "interval": "15m",
+      "size_bytes": 321480,
+      "path": "E:\\binance_futures_bot\\data\\cache\\ADAUSDT_15m.json"
+    },
+    "APTUSDT_1h": {
+      "symbol": "APTUSDT",
+      "interval": "1h",
+      "size_bytes": 330170,
+      "path": "E:\\binance_futures_bot\\data\\cache\\APTUSDT_1h.json"
+    },
+    "APTUSDT_15m": {
+      "symbol": "APTUSDT",
+      "interval": "15m",
+      "size_bytes": 318006,
+      "path": "E:\\binance_futures_bot\\data\\cache\\APTUSDT_15m.json"
+    },
+    "DOTUSDT_1h": {
+      "symbol": "DOTUSDT",
+      "interval": "1h",
+      "size_bytes": 330996,
+      "path": "E:\\binance_futures_bot\\data\\cache\\DOTUSDT_1h.json"
+    },
+    "DOTUSDT_15m": {
+      "symbol": "DOTUSDT",
+      "interval": "15m",
+      "size_bytes": 319104,
+      "path": "E:\\binance_futures_bot\\data\\cache\\DOTUSDT_15m.json"
+    },
+    "TIAUSDT_1h": {
+      "symbol": "TIAUSDT",
+      "interval": "1h",
+      "size_bytes": 325404,
+      "path": "E:\\binance_futures_bot\\data\\cache\\TIAUSDT_1h.json"
+    },
+    "TIAUSDT_15m": {
+      "symbol": "TIAUSDT",
+      "interval": "15m",
+      "size_bytes": 314014,
+      "path": "E:\\binance_futures_bot\\data\\cache\\TIAUSDT_15m.json"
+    }
+  },
+  "generated_at_utc": "2026-11-06T16:59:44.204010+00:00"
+}

@@ -1,0 +1,17 @@
+[Unit]
+Description=Binance Futures 7/24 Continuous Strategy Swarm Engine
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/binance_futures_bot
+ExecStart=/home/ubuntu/binance_futures_bot/target/release/binance_futures_bot --continuous-swarm --interval 60 --batch 500
+Restart=always
+RestartSec=5
+Nice=19
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

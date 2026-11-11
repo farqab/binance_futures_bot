@@ -1,0 +1,473 @@
+//@version=5
+strategy("Kantitatif S/R ve SMA Kırılım Olasılık Stratejisi [M5 Optimize]", overlay=true,
+initial_capital=10000, default_qty_type=strategy.percent_of_equity, default_qty_value=10,
+commission_type=strategy.commission.percent, commission_value=0.04)
+//
+=======================================================================
+=====
+// 1. KULLANICI GİRDİLERİ (INPUTS)
+//
+=======================================================================
+=====
+grp_prob   = "Olasılık Motoru ve Kırılım Filtreleri"
+minProbScr = input.int(65, "Minimum Giriş Olasılık Skoru (%)", minval=30, maxval=95,
+step=5, group=grp_prob, tooltip="75+ A+ Kırılım, 50-74 Orta Olasılık, <50 Yüksek Fakeout Riski")
+rvolThresh = input.float(1.5, "Minimum Göreli Hacim (RVOL Çarpanı)", minval=0.5,
+maxval=5.0, step=0.1, group=grp_prob)
+atrBreakM  = input.float(0.30, "Minimum ATR Kırılım Mesafesi Çarpanı", minval=0.05,
+maxval=1.5, step=0.05, group=grp_prob)
+htfTf      = input.timeframe("15", "Üst Zaman Dilimi (MTF Trend Filtresi)", group=grp_prob)
+
+tradeMode  = input.string("S/R + SMA Birleşik", "İşlem Tetikleme Modu", options=["Sadece S/R Kırılımı", "Sadece SMA Kırılımı", "S/R + SMA Birleşik"], group=grp_prob)
+grp_risk   = "ATR Dinamik Risk Yönetimi"
+atrLen     = input.int(14, "ATR Periyodu", minval=1, group=grp_risk)
+slAtrMult  = input.float(1.5, "Stop-Loss ATR Çarpanı", minval=0.5, step=0.1, group=grp_risk)
+tpAtrMult  = input.float(2.5, "Take-Profit ATR Çarpanı", minval=0.5, step=0.1,
+group=grp_risk)
+grp_sr     = "Pivot Kanal Destek/Direnç Ayarları"
+prd        = input.int(defval=10, title="Pivot Periyodu", minval=4, maxval=30, group=grp_sr)
+ppsrc      = input.string(defval="High/Low", title="Pivot Kaynağı", options=["High/Low", "Close/Open"], group=grp_sr)
+maxnumpp   = input.int(defval=20, title="Maksimum Pivot Sayısı", minval=5, maxval=100,
+group=grp_sr)
+ChannelW   = input.int(defval=10, title="Maksimum Kanal Genişliği %", minval=1,
+group=grp_sr)
+maxnumsr   = input.int(defval=5, title="Maksimum S/R Bölge Sayısı", minval=1, maxval=10,
+group=grp_sr)
+min_strength = input.int(defval=2, title="Minimum Güç (Temas Sayısı)", minval=1,
+maxval=10, group=grp_sr)
+grp_vis    = "Görsel ve Tablo Ayarları"
+labelloc   = input.int(defval=15, title="Etiket Konumu (Bar Offset)", group=grp_vis)
+linestyle  = input.string(defval="Dashed", title="Çizgi Stili", options=["Solid", "Dotted", "Dashed"], group=grp_vis)
+linewidth  = input.int(defval=2, title="Çizgi Kalınlığı", minval=1, maxval=4, group=grp_vis)
+resistancecolor = input.color(defval=color.red, title="Direnç Rengi", group=grp_vis)
+supportcolor    = input.color(defval=color.lime, title="Destek Rengi", group=grp_vis)
+showpp     = input.bool(false, title="Pivot Noktalarını Göster", group=grp_vis)
+showTable  = input.bool(true, title="Canlı Olasılık ve İstatistik Tablosunu Göster",
+group=grp_vis)
+//
+=======================================================================
+=====
+// 2. TEMEL GÖSTERGELER VE MTF (ÇOKLU ZAMAN DİLİMİ) HESAPLAMALARI
+//
+=======================================================================
+=====
+smaPeriod = 50
+sma50     = ta.sma(close, smaPeriod)
+smaSlope  = sma50 - sma50[3]
+
+// Repaint yapmayan onaylanmış Üst Zaman Dilimi (MTF) 50-SMA ve Kapanış verisi
+[htfClose, htfSma50] = request.security(syminfo.tickerid, htfTf, [close[1], ta.sma(close,
+smaPeriod)[1]], lookahead=barmerge.lookahead_off)
+htfBullish = htfClose > htfSma50
+htfBearish = htfClose < htfSma50
+// ATR, Göreli Hacim (RVOL), RSI ve MACD
+atrVal    = ta.atr(atrLen)
+volSma20  = ta.sma(volume, 20)
+rvol      = na(volSma20) or volSma20 == 0 ? 1.0 : volume / volSma20
+rsiLength = 14
+rsi       = ta.rsi(close, rsiLength)
+[macdLine, signalLine, histLine] = ta.macd(close, 12, 26, 9)
+// Yatay Piyasa (Chop) Rejim Kontrolü: Kısa/Uzun Volatilite ve Trend Gücü
+shortVol  = ta.stdev(close, 10)
+longVol   = ta.stdev(close, 50)
+volRatio  = longVol > 0 ? shortVol / longVol : 1.0
+trendStr  = math.abs(close - sma50) / sma50 * 100
+isChoppy  = trendStr < 0.05 and volRatio > 1.2
+//
+=======================================================================
+=====
+// 3. PARABOLIC SAR VE SUPERTREND HESAPLAMALARI
+//
+=======================================================================
+=====
+start = 0.02
+increment = 0.02
+maximum = 0.2
+var float af = na
+var float ep = na
+var float sar = na
+var int sarTrend = 1
+if na(af)
+af := start
+ep := low
+sar := low
+else
+
+if sarTrend == 1
+if high > ep
+ep := high
+af := math.min(af + increment, maximum)
+else
+if low < ep
+ep := low
+af := math.min(af + increment, maximum)
+sar := sarTrend == 1 ? sar[1] + af * (ep - sar[1]) : sar[1] - af * (sar[1] - ep)
+if sarTrend == 1 and low < sar
+sarTrend := -1
+sar := ep
+ep := high
+af := start
+else if sarTrend == -1 and high > sar
+sarTrend := 1
+sar := ep
+ep := low
+af := start
+stAtrPeriod = input.int(10, "Supertrend ATR Uzunluğu", minval=1, group=grp_vis)
+stFactor    = input.float(3.0, "Supertrend Çarpanı", minval=0.01, step=0.01, group=grp_vis)
+[supertrend, stDirection] = ta.supertrend(stFactor, stAtrPeriod)
+supertrend := barstate.isfirst ? na : supertrend
+//
+=======================================================================
+=====
+// 4. PİVOT KÜMELENME TABANLI DESTEK VE DİRENÇ KANALLARI
+//
+=======================================================================
+=====
+float src1 = ppsrc == "High/Low" ? high : math.max(close, open)
+float src2 = ppsrc == "High/Low" ? low : math.min(close, open)
+float ph = ta.pivothigh(src1, prd, prd)
+float pl = ta.pivotlow(src2, prd, prd)
+plotshape(ph and showpp, text="H", style=shape.labeldown, color=na,
+textcolor=color.new(color.red, 0), location=location.abovebar, offset=-prd)
+plotshape(pl and showpp, text="L", style=shape.labelup, color=na,
+textcolor=color.new(color.lime, 0), location=location.belowbar, offset=-prd)
+
+Lstyle = linestyle == "Dashed" ? line.style_dashed : linestyle == "Solid" ? line.style_solid :
+line.style_dotted
+prdhighest = ta.highest(300)
+prdlowest  = ta.lowest(300)
+cwidth     = (prdhighest - prdlowest) * ChannelW / 100
+var pivotvals = array.new_float(0)
+if ph or pl
+array.unshift(pivotvals, ph ? ph : pl)
+if array.size(pivotvals) > maxnumpp
+array.pop(pivotvals)
+get_sr_vals(ind) =>
+float lo = array.get(pivotvals, ind)
+float hi = lo
+int numpp = 0
+for y = 0 to array.size(pivotvals) - 1 by 1
+float cpp = array.get(pivotvals, y)
+float wdth = cpp <= lo ? hi - cpp : cpp - lo
+if wdth <= cwidth
+if cpp <= hi
+lo := math.min(lo, cpp)
+else
+hi := math.max(hi, cpp)
+numpp += 1
+[hi, lo, numpp]
+var sr_up_level = array.new_float(0)
+var sr_dn_level = array.new_float(0)
+var sr_strength = array.new_float(0)
+find_loc(strength) =>
+ret = array.size(sr_strength)
+for i = ret > 0 ? array.size(sr_strength) - 1 : na to 0 by 1
+if strength <= array.get(sr_strength, i)
+break
+ret := i
+ret
+check_sr(hi, lo, strength) =>
+ret = true
+
+for i = 0 to array.size(sr_up_level) > 0 ? array.size(sr_up_level) - 1 : na by 1
+if (array.get(sr_up_level, i) >= lo and array.get(sr_up_level, i) <= hi) or
+(array.get(sr_dn_level, i) >= lo and array.get(sr_dn_level, i) <= hi)
+if strength >= array.get(sr_strength, i)
+array.remove(sr_strength, i)
+array.remove(sr_up_level, i)
+array.remove(sr_dn_level, i)
+else
+ret := false
+break
+ret
+var sr_lines  = array.new_line(11, na)
+var sr_labels = array.new_label(11, na)
+for x = 1 to 10 by 1
+if not na(array.get(sr_labels, x))
+rate = 100 * (label.get_y(array.get(sr_labels, x)) - close) / close
+label.set_text(array.get(sr_labels, x), text=str.tostring(label.get_y(array.get(sr_labels,
+x))) + "(" + str.tostring(rate, "#.##") + "%)")
+label.set_x(array.get(sr_labels, x), x=bar_index + labelloc)
+label.set_color(array.get(sr_labels, x), color=label.get_y(array.get(sr_labels, x)) >= close
+? color.red : color.lime)
+label.set_textcolor(array.get(sr_labels, x), textcolor=label.get_y(array.get(sr_labels, x))
+>= close ? color.white : color.black)
+label.set_style(array.get(sr_labels, x), style=label.get_y(array.get(sr_labels, x)) >= close
+? label.style_label_down : label.style_label_up)
+if not na(array.get(sr_lines, x))
+line.set_color(array.get(sr_lines, x), color=line.get_y1(array.get(sr_lines, x)) >= close ?
+resistancecolor : supportcolor)
+if ph or pl
+array.clear(sr_up_level)
+array.clear(sr_dn_level)
+array.clear(sr_strength)
+for x = 0 to array.size(pivotvals) - 1 by 1
+[hi, lo, strength] = get_sr_vals(x)
+if check_sr(hi, lo, strength)
+loc = find_loc(strength)
+if loc < maxnumsr and strength >= min_strength
+array.insert(sr_strength, loc, strength)
+array.insert(sr_up_level, loc, hi)
+array.insert(sr_dn_level, loc, lo)
+
+if array.size(sr_strength) > maxnumsr
+array.pop(sr_strength)
+array.pop(sr_up_level)
+array.pop(sr_dn_level)
+for x = 1 to 10 by 1
+line.delete(array.get(sr_lines, x))
+label.delete(array.get(sr_labels, x))
+for x = 0 to array.size(sr_up_level) > 0 ? array.size(sr_up_level) - 1 : na by 1
+float mid = math.round_to_mintick((array.get(sr_up_level, x) + array.get(sr_dn_level, x))
+/ 2)
+rate = 100 * (mid - close) / close
+array.set(sr_labels, x + 1, label.new(x=bar_index + labelloc, y=mid, text=str.tostring(mid)
++ "(" + str.tostring(rate, "#.##") + "%)", color=mid >= close ? color.red : color.lime,
+textcolor=mid >= close ? color.white : color.black, style=mid >= close ?
+label.style_label_down : label.style_label_up))
+array.set(sr_lines, x + 1, line.new(x1=bar_index, y1=mid, x2=bar_index - 1, y2=mid,
+extend=extend.both, color=mid >= close ? resistancecolor : supportcolor, style=Lstyle,
+width=linewidth))
+//
+=======================================================================
+=====
+// 5. DİRENÇ/DESTEK VE SMA KIRILIM TESPİTİ + OLASILIK PUANLAMA MOTORU
+//
+=======================================================================
+=====
+f_detect_sr_break() =>
+bool resBroken = false
+bool supBroken = false
+float brokenLvl = na
+float brokenStr = 0.0
+int sz = array.size(sr_up_level)
+if sz > 0
+for x = 0 to sz - 1 by 1
+float top = array.get(sr_up_level, x)
+float bot = array.get(sr_dn_level, x)
+float mid = math.round_to_mintick((top + bot) / 2)
+float str = array.get(sr_strength, x)
+// Direnç Kırılımı: Fiyat kanalın orta/üst sınırını yukarı kesiyor
+if close[1] <= top and close > top
+resBroken := true
+
+brokenLvl := top
+brokenStr := math.max(brokenStr, str)
+// Destek Kırılımı: Fiyat kanalın alt sınırını aşağı kesiyor
+if close[1] >= bot and close < bot
+supBroken := true
+brokenLvl := bot
+brokenStr := math.max(brokenStr, str)
+[resBroken, supBroken, brokenLvl, brokenStr]
+[srLongBreak, srShortBreak, activeSrLevel, activeSrStrength] = f_detect_sr_break()
+smaLongBreak  = ta.crossover(close, sma50)
+smaShortBreak = ta.crossunder(close, sma50)
+// Referans Kırılım Seviyesi (Kırılım mesafesini ölçmek için)
+float refLongLevel  = srLongBreak ? activeSrLevel : sma50
+float refShortLevel = srShortBreak ? activeSrLevel : sma50
+// --- KANTİTATİF OLASILIK SKORU (0 - 100 PUAN) ---
+// 1. Göreli Hacim Onayı (25 Puan): Kurumsal katılım
+float scrVol = rvol >= rvolThresh ? 25.0 : rvol >= 1.1 ? 12.5 : 0.0
+// 2. Mum Gövde ve ATR Kırılım Mesafesi (25 Puan): Stop-loss şelalesi tetikleme gücü
+float candleRange = high - low
+float bodyRatio   = candleRange > 0 ? math.abs(close - open) / candleRange : 0.0
+float longDist    = not na(refLongLevel) ? (close - refLongLevel) : 0.0
+float shortDist   = not na(refShortLevel) ? (refShortLevel - close) : 0.0
+float scrLongBreakQuality  = (longDist >= atrVal * atrBreakM and bodyRatio >= 0.55) ? 25.0
+: (longDist > 0 and bodyRatio >= 0.45) ? 12.5 : 0.0
+float scrShortBreakQuality = (shortDist >= atrVal * atrBreakM and bodyRatio >= 0.55) ?
+25.0 : (shortDist > 0 and bodyRatio >= 0.45) ? 12.5 : 0.0
+// 3. Çoklu Zaman Dilimi (MTF) ve 50-SMA Eğim Uyumu (20 Puan)
+float scrLongTrend  = (htfBullish and close > sma50 and smaSlope > 0) ? 20.0 : (htfBullish or
+(close > sma50 and smaSlope > 0)) ? 10.0 : 0.0
+float scrShortTrend = (htfBearish and close < sma50 and smaSlope < 0) ? 20.0 : (htfBearish
+or (close < sma50 and smaSlope < 0)) ? 10.0 : 0.0
+// 4. Momentum ve Trend Göstergeleri Uyumu (20 Puan): RSI, MACD, Supertrend, PSAR
+bool momLongOk  = rsi > 50 and rsi < 72 and macdLine > signalLine and stDirection < 0 and
+sarTrend == 1
+bool momShortOk = rsi < 50 and rsi > 28 and macdLine < signalLine and stDirection > 0 and
+
+sarTrend == -1
+float scrLongMom  = momLongOk ? 20.0 : (rsi > 50 and (macdLine > signalLine or
+stDirection < 0)) ? 10.0 : 0.0
+float scrShortMom = momShortOk ? 20.0 : (rsi < 50 and (macdLine < signalLine or
+stDirection > 0)) ? 10.0 : 0.0
+// 5. Piyasa Rejimi ve S/R Küme Gücü (10 Puan)
+float scrRegime = not isChoppy ? 10.0 : 0.0
+float longProbScore  = math.min(100.0, scrVol + scrLongBreakQuality + scrLongTrend +
+scrLongMom + scrRegime)
+float shortProbScore = math.min(100.0, scrVol + scrShortBreakQuality + scrShortTrend +
+scrShortMom + scrRegime)
+//
+=======================================================================
+=====
+// 6. TARİHSEL KIRILIM BAŞARI ORANI (EMPIRICAL WIN-RATE TRACKER - 5 BAR KURALI)
+//
+=======================================================================
+=====
+// Metodoloji: Kırılımdan sonraki 5 bar içinde fiyat >= 0.8x ATR devamlılık sağlarsa Başarılı,
+// kırılan seviyenin gerisine kapanırsa Sahte Kırılım (Fakeout) olarak kaydedilir.
+var int srTotalBreaks  = 0
+var int srSuccessCount = 0
+var int smaTotalBreaks = 0
+var int smaSuccessCount = 0
+var bool pendSrActive  = false
+var int  pendSrDir     = 0
+var float pendSrLvl    = na
+var int  pendSrBar     = 0
+if (srLongBreak or srShortBreak) and not pendSrActive
+pendSrActive := true
+pendSrDir    := srLongBreak ? 1 : -1
+pendSrLvl    := activeSrLevel
+pendSrBar    := bar_index
+if pendSrActive and bar_index > pendSrBar
+int barsPassed = bar_index - pendSrBar
+bool hitTarget = pendSrDir == 1 ? (high - pendSrLvl >= 0.8 * atrVal) : (pendSrLvl - low >=
+0.8 * atrVal)
+
+bool fakeout   = pendSrDir == 1 ? (close < pendSrLvl) : (close > pendSrLvl)
+if hitTarget
+srTotalBreaks  += 1
+srSuccessCount += 1
+pendSrActive   := false
+else if fakeout or barsPassed >= 5
+srTotalBreaks  += 1
+pendSrActive   := false
+var bool pendSmaActive = false
+var int  pendSmaDir    = 0
+var float pendSmaLvl   = na
+var int  pendSmaBar    = 0
+if (smaLongBreak or smaShortBreak) and not pendSmaActive
+pendSmaActive := true
+pendSmaDir    := smaLongBreak ? 1 : -1
+pendSmaLvl    := sma50
+pendSmaBar    := bar_index
+if pendSmaActive and bar_index > pendSmaBar
+int barsPassed = bar_index - pendSmaBar
+bool hitTarget = pendSmaDir == 1 ? (high - pendSmaLvl >= 0.8 * atrVal) : (pendSmaLvl -
+low >= 0.8 * atrVal)
+bool fakeout   = pendSmaDir == 1 ? (close < sma50) : (close > sma50)
+if hitTarget
+smaTotalBreaks  += 1
+smaSuccessCount += 1
+pendSmaActive   := false
+else if fakeout or barsPassed >= 5
+smaTotalBreaks  += 1
+pendSmaActive   := false
+float histSrWinRate  = srTotalBreaks > 0 ? (srSuccessCount * 100.0 / srTotalBreaks) : 37.5
+float histSmaWinRate = smaTotalBreaks > 0 ? (smaSuccessCount * 100.0 /
+smaTotalBreaks) : 50.4
+//
+=======================================================================
+=====
+// 7. STRATEJİ İŞLEM KURALLARI VE DİNAMİK ATR ÇIKIŞLARI (SIRALI YÜRÜTME DÜZELTİLDİ)
+//
+=======================================================================
+
+=====
+bool rawLongTrigger  = tradeMode == "Sadece S/R Kırılımı" ? srLongBreak : tradeMode ==
+"Sadece SMA Kırılımı" ? smaLongBreak : (srLongBreak or smaLongBreak)
+bool rawShortTrigger = tradeMode == "Sadece S/R Kırılımı" ? srShortBreak : tradeMode ==
+"Sadece SMA Kırılımı" ? smaShortBreak : (srShortBreak or smaShortBreak)
+bool finalLongCond  = rawLongTrigger and longProbScore >= minProbScr
+bool finalShortCond = rawShortTrigger and shortProbScore >= minProbScr
+var float activeStopLong   = na
+var float activeLimitLong  = na
+var float activeStopShort  = na
+var float activeLimitShort = na
+if finalLongCond and strategy.position_size <= 0
+activeStopLong  := close - atrVal * slAtrMult
+activeLimitLong := close + atrVal * tpAtrMult
+strategy.entry("Long", strategy.long, comment="Kırılım Al (%" +
+str.tostring(longProbScore, "#") + ")")
+if finalShortCond and strategy.position_size >= 0
+activeStopShort  := close + atrVal * slAtrMult
+activeLimitShort := close - atrVal * tpAtrMult
+strategy.entry("Short", strategy.short, comment="Kırılım Sat (%" +
+str.tostring(shortProbScore, "#") + ")")
+if strategy.position_size > 0
+strategy.exit("ExitLong", from_entry="Long", stop=activeStopLong, limit=activeLimitLong)
+if strategy.position_size < 0
+strategy.exit("ExitShort", from_entry="Short", stop=activeStopShort,
+limit=activeLimitShort)
+//
+=======================================================================
+=====
+// 8. GRAFİK ÇİZİMLERİ VE ALARMLAR
+//
+=======================================================================
+=====
+plot(series=sma50, title="50 Periyotluk SMA", color=color.blue, linewidth=2)
+plot(series=htfSma50, title="Üst Zaman Dilimi (MTF) 50 SMA",
+color=color.new(color.purple, 30), linewidth=2, style=plot.style_Circles)
+
+plot(sar, color=color.new(color.orange, 20), style=plot.style_cross, title="Parabolic SAR")
+bodyMiddle = plot(barstate.isfirst ? na : (open + close) / 2, display=display.none)
+upTrend    = plot(stDirection < 0 ? supertrend : na, "Supertrend Yükseliş", color=color.green,
+style=plot.style_linebr)
+downTrend  = plot(stDirection < 0 ? na : supertrend, "Supertrend Düşüş", color=color.red,
+style=plot.style_linebr)
+fill(bodyMiddle, upTrend, color.new(color.green, 90), fillgaps=false)
+fill(bodyMiddle, downTrend, color.new(color.red, 90), fillgaps=false)
+plotshape(series=finalLongCond, title="Yüksek Olasılıklı Alım", location=location.belowbar,
+color=color.green, style=shape.triangleup, size=size.small, text="AL")
+plotshape(series=finalShortCond, title="Yüksek Olasılıklı Satım",
+location=location.abovebar, color=color.red, style=shape.triangledown, size=size.small,
+text="SAT")
+alertcondition(finalLongCond, title="Yüksek Olasılıklı Yukarı Kırılım", message="Direnç/SMA
+Yüksek Olasılıkla Yukarı Kırıldı!")
+alertcondition(finalShortCond, title="Yüksek Olasılıklı Aşağı Kırılım", message="Destek/SMA
+Yüksek Olasılıkla Aşağı Kırıldı!")
+//
+=======================================================================
+=====
+// 9. CANLI OLASILIK VE İSTATİSTİK PANELİ (TABLE DASHBOARD)
+//
+=======================================================================
+=====
+var table probTable = table.new(position.top_right, 2, 8, bgcolor=color.new(color.black, 15),
+border_width=1, border_color=color.gray)
+if barstate.islast and showTable
+float domScore = close >= sma50 ? longProbScore : shortProbScore
+string gradeTxt = domScore >= 75 ? "A+ (Güçlü Kırılım)" : domScore >= 50 ? "B (Retest
+Bekle)" : "F (Yüksek Fakeout Riski)"
+color gradeCol  = domScore >= 75 ? color.new(color.green, 20) : domScore >= 50 ?
+color.new(color.orange, 20) : color.new(color.red, 20)
+table.cell(probTable, 0, 0, "KANTİTATİF KIRILIM MOTORU", text_color=color.white,
+bgcolor=color.new(color.blue, 30), text_size=size.small)
+table.cell(probTable, 1, 0, "DEĞER / OLASILIK", text_color=color.white,
+bgcolor=color.new(color.blue, 30), text_size=size.small)
+
+table.cell(probTable, 0, 1, "Anlık Kırılım Olasılık Skoru", text_color=color.white,
+text_size=size.small)
+table.cell(probTable, 1, 1, "%" + str.tostring(domScore, "#.0") + " [" + gradeTxt + "]",
+text_color=color.white, bgcolor=gradeCol, text_size=size.small)
+table.cell(probTable, 0, 2, "Göreli Hacim (RVOL 20)", text_color=color.white,
+text_size=size.small)
+table.cell(probTable, 1, 2, str.tostring(rvol, "#.##") + "x " + (rvol >= rvolThresh ? "(Onaylı)" :
+"(Zayıf)"), text_color=rvol >= rvolThresh ? color.lime : color.orange, text_size=size.small)
+table.cell(probTable, 0, 3, "Üst Zaman Dilimi (" + htfTf + "m) Trend", text_color=color.white,
+text_size=size.small)
+table.cell(probTable, 1, 3, htfBullish ? "BOĞA (SMA Üstü)" : "AYI (SMA Altı)",
+text_color=htfBullish ? color.lime : color.red, text_size=size.small)
+table.cell(probTable, 0, 4, "Piyasa Rejimi (Volatilite)", text_color=color.white,
+text_size=size.small)
+table.cell(probTable, 1, 4, isChoppy ? "YATAY TESTERE (Dikkat)" : "TREND / GENİŞLEME",
+text_color=isChoppy ? color.red : color.lime, text_size=size.small)
+table.cell(probTable, 0, 5, "Tarihsel S/R Kırılım Başarısı", text_color=color.white,
+text_size=size.small)
+table.cell(probTable, 1, 5, "%" + str.tostring(histSrWinRate, "#.1") + " (" +
+str.tostring(srSuccessCount) + "/" + str.tostring(srTotalBreaks) + ")", text_color=color.aqua,
+text_size=size.small)
+table.cell(probTable, 0, 6, "Tarihsel 50-SMA Kırılım Başarısı", text_color=color.white,
+text_size=size.small)
+table.cell(probTable, 1, 6, "%" + str.tostring(histSmaWinRate, "#.1") + " (" +
+str.tostring(smaSuccessCount) + "/" + str.tostring(smaTotalBreaks) + ")",
+text_color=color.aqua, text_size=size.small)
+float stratWinRate = strategy.closedtrades > 0 ? (strategy.wintrades * 100.0 /
+strategy.closedtrades) : 0.0
+table.cell(probTable, 0, 7, "Filtreli Strateji Kazanma Oranı", text_color=color.white,
+text_size=size.small)
+table.cell(probTable, 1, 7, "%" + str.tostring(stratWinRate, "#.1") + " (Toplam: " +
+str.tostring(strategy.closedtrades) + ")", text_color=stratWinRate >= 50 ? color.lime :
+color.yellow, text_size=size.small)

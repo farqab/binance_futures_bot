@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>Binance Futures 1H 3'lü Ortogonal Kurumsal Terminal v8.9</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    .glow-green { text-shadow: 0 0 12px rgba(34, 197, 94, 0.55); }
+    .glow-red { text-shadow: 0 0 12px rgba(239, 68, 68, 0.55); }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 antialiased p-4">
+  <div class="max-w-7xl mx-auto space-y-4">
+    
+    <!-- Üst Başlık ve 1H Kurumsal Mimari Durumu -->
+    <div class="flex flex-wrap items-center justify-between bg-slate-900 border border-slate-800 rounded-xl p-4 shadow-lg">
+      <div class="flex items-center space-x-3">
+        <span class="text-3xl">🏛️</span>
+        <div>
+          <h1 class="font-bold text-lg text-slate-100 flex items-center gap-2">
+            Binance Futures 1H 3'lü Ortogonal Sepet Terminali
+            <span class="text-xs font-semibold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">v8.9 • 1H Kilitli</span>
+            <span class="text-xs font-semibold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">1.0x ATR Başabaş</span>
+            <span class="text-xs font-semibold px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20">BTC Beta Kalkanı</span>
+            <span class="text-xs font-semibold px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">MIN_ATR: %0.35</span>
+          </h1>
+          <p class="text-xs text-slate-400 mt-0.5">13 Parite • 1.0x ATR Başabaş Kalkanı (+%0.12) • BTC 1H Trend Filtresi • Mod 2 Hacim Teyidi (>1.2x) • Kademeli Trailing • Tekil Pozisyon Kilidi</p>
+        </div>
+      </div>
+      <div class="flex flex-wrap items-center gap-2 mt-3 sm:mt-0">
+        <a href="swarm_leaderboard.html" target="_blank" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 text-xs font-medium hover:bg-cyan-500/20 transition">
+          <span>🧬 7/24 Swarm Liderlik Panosu</span>
+          <span>↗</span>
+        </a>
+        <div class="flex items-center space-x-2 px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-mono font-medium">
+          <span class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
+          <span>⏱️ 1H Kapanış: <span id="candle-countdown" class="font-bold text-amber-200">--:--</span></span>
+        </div>
+        <div class="flex items-center space-x-2 px-3 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/30 text-indigo-300 text-xs font-medium">
+          <span class="w-2 h-2 rounded-full bg-indigo-400 animate-pulse"></span>
+          <span id="rust-sync-text">Rust v8.9 1H Senkron</span>
+        </div>
+        <div id="conn-status" class="flex items-center space-x-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-medium">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span>13 Coin Canlı Akış</span>
+        </div>
+        <div class="text-xs text-slate-400 font-mono" id="tick-counter">Tick: #0</div>
+      </div>
+    </div>
+
+    <!-- 3'lü Ortogonal Strateji & Risk Rozetleri Şeridi -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-2.5">
+      <div class="bg-slate-900/80 border border-slate-800 rounded-lg p-2.5 flex items-center justify-between">
+        <div class="flex items-center space-x-2">
+          <span class="text-lg">🎯</span>
+          <div>
+            <div class="text-xs font-bold text-slate-200">Mod 1: Likidite Avcısı</div>
+            <div class="text-[10px] text-slate-400">SL: 2.5x | TP: 3.5x | TR: 1.5x/0.8x</div>
+          </div>
+        </div>
+        <span class="text-[11px] font-mono font-bold text-cyan-400 bg-cyan-950/60 px-2 py-0.5 rounded border border-cyan-800/40">%0.5 Risk</span>
+      </div>
+
+      <div class="bg-slate-900/80 border border-slate-800 rounded-lg p-2.5 flex items-center justify-between">
+        <div class="flex items-center space-x-2">
+          <span class="text-lg">⚡</span>
+          <div>
+            <div class="text-xs font-bold text-slate-200">Mod 2: Donchian Kırılım</div>
+            <div class="text-[10px] text-slate-400">SL: 2.5x | TP: 3.5x | TR: 1.5x/1.2x</div>
+          </div>
+        </div>
+        <span class="text-[11px] font-mono font-bold text-cyan-400 bg-cyan-950/60 px-2 py-0.5 rounded border border-cyan-800/40">%0.5 Risk</span>
+      </div>
+
+      <div class="bg-slate-900/80 border border-slate-800 rounded-lg p-2.5 flex items-center justify-between">
+        <div class="flex items-center space-x-2">
+          <span class="text-lg">🌊</span>
+          <div>
+            <div class="text-xs font-bold text-slate-200">Mod 3: EMA Pullback</div>
+            <div class="text-[10px] text-slate-400">SL: 1.8x | TP: 3.5x | TR: 1.5x/1.0x</div>
+          </div>
+        </div>
+        <span class="text-[11px] font-mono font-bold text-cyan-400 bg-cyan-950/60 px-2 py-0.5 rounded border border-cyan-800/40">%0.5 Risk</span>
+      </div>
+
+      <div class="bg-slate-900/80 border border-slate-800 rounded-lg p-2.5 flex items-center justify-between">
+        <div class="flex items-center space-x-2">
+          <span class="text-lg">🛡️</span>
+          <div>
+            <div class="text-xs font-bold text-slate-200">Kademeli Trailing Kilidi</div>
+            <div class="text-[10px] text-slate-400">+2.5x ATR Kârda -> 0.4x Daralma</div>
+          </div>
+        </div>
+        <span class="text-[11px] font-mono font-bold text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-800/40">Kâr Koruma</span>
+      </div>
+    </div>
+
+    <!-- 13 Coin Canlı Sinyal Radarı & Order Flow Matrix -->
+    <div class="bg-slate-900 border border-slate-800 rounded-xl p-3.5 shadow-sm">
+      <div class="flex items-center justify-between mb-2.5">
+        <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">📡 13 Parite Order Flow & 1H Likidite Radarı (Taker Hacmi + Balina Duyarlılığı)</span>
+        <span class="text-[11px] font-mono text-cyan-400 font-semibold">Taker Alıcı/Satıcı Oranı • Balina Net Pozisyonu • 1H Kapanışlar</span>
+      </div>
+      <div id="radar-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 gap-2.5">
+        <!-- JS ile canlı doldurulur -->
+      </div>
+    </div>
+
+    <!-- 4 Ana Mikro-Kasa Metrik Kartı -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+      <!-- 1. Aktif Odak Parite & Fiyat -->
+      <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 shadow-sm">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-medium text-slate-400 uppercase">Odak Parite: <span id="active-sym-title" class="text-cyan-400 font-bold">BTCUSDT</span></span>
+          <span id="atr-badge" class="text-[11px] font-mono text-slate-400 bg-slate-800 px-1.5 py-0.5 rounded">ATR: --</span>
+        </div>
+        <div id="current-price" class="text-2xl font-bold font-mono text-emerald-400 mt-1">--</div>
+        <div class="text-xs text-slate-400 mt-1 flex justify-between font-mono">
+          <span>EMA9: <span id="ema-fast" class="text-amber-400">--</span></span>
+          <span>EMA21: <span id="ema-slow" class="text-purple-400">--</span></span>
+        </div>
+      </div>
+
+      <!-- 2. Aktif Pozisyon & Rejim Bilgisi -->
+      <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 shadow-sm">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-medium text-slate-400 uppercase">Aktif Pozisyon</span>
+          <span id="trailing-badge" class="px-1.5 py-0.5 text-[10px] font-bold rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">🛡️ KORUMA AKTİF</span>
+        </div>
+        <div class="flex items-center space-x-2 mt-1.5">
+          <span id="pos-badge" class="px-2 py-0.5 text-xs font-bold rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">TARANIYOR</span>
+          <span id="pos-qty" class="text-sm font-mono text-slate-200">--</span>
+        </div>
+        <div class="text-xs text-slate-400 mt-1 font-mono flex justify-between">
+          <span>Giriş: <span id="entry-price" class="text-slate-200">--</span></span>
+          <span>Teminat: <span id="margin-used" class="text-cyan-400">--</span></span>
+        </div>
+      </div>
+
+      <!-- 3. Anlık NET K/Z (Komisyon Düşülmüş) -->
+      <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 shadow-sm">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-medium text-slate-400 uppercase">Anlık NET K/Z (Komisyon Düşülmüş)</span>
+          <span id="roe-badge" class="text-xs font-mono font-semibold text-emerald-400">ROE: +0.00%</span>
+        </div>
+        <div id="pnl-amount" class="text-2xl font-bold font-mono text-emerald-400 mt-1">+$0.000</div>
+        <div class="text-[11px] text-slate-400 font-mono mt-1 flex justify-between">
+          <span>Brüt: <span id="gross-pnl" class="text-slate-200">+$0.000</span></span>
+          <span>Komisyon: <span id="fees-paid" class="text-rose-400">-$0.000</span></span>
+        </div>
+      </div>
+
+      <!-- 4. Kasa & Risk Seviyeleri -->
+      <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 shadow-sm">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-medium text-slate-400 uppercase">Kasa & Risk Durumu</span>
+          <span id="winrate-badge" class="text-[11px] font-mono text-slate-400">İşlem: 0 (0K/0Z)</span>
+        </div>
+        <div id="equity-val" class="text-xl font-bold font-mono text-slate-100 mt-1">-- USDT</div>
+        <div class="text-xs text-slate-400 mt-1 flex justify-between font-mono">
+          <span>SL: <span id="sl-price" class="text-rose-400 font-semibold">--</span></span>
+          <span>TP: <span id="tp-price" class="text-emerald-400 font-semibold">--</span></span>
+        </div>
+        <div class="text-[11px] text-slate-500 mt-0.5 flex justify-between font-mono">
+          <span>Realize Net: <span id="realized-pnl" class="text-slate-300">+$0.000</span></span>
+          <span>Max DD: <span id="max-dd" class="text-slate-300">0.00%</span></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Canlı Grafik & RSI Paneli -->
+    <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 shadow-sm space-y-3">
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <div class="flex flex-wrap items-center gap-4">
+          <span class="text-sm font-semibold text-slate-200"><span id="chart-sym-label" class="text-cyan-400">BTCUSDT</span> 1H Grafik & Seviyeler</span>
+          <span class="text-xs flex items-center space-x-1.5"><span class="w-3 h-0.5 bg-cyan-400 inline-block"></span><span class="text-slate-400">Fiyat</span></span>
+          <span class="text-xs flex items-center space-x-1.5"><span class="w-3 h-0.5 bg-amber-400 inline-block"></span><span class="text-slate-400">1H EMA(9)</span></span>
+          <span class="text-xs flex items-center space-x-1.5"><span class="w-3 h-0.5 bg-purple-400 inline-block"></span><span class="text-slate-400">1H EMA(21)</span></span>
+          <span class="text-xs flex items-center space-x-1.5"><span class="w-3 h-0.5 bg-emerald-500 inline-block"></span><span class="text-slate-400">Giriş</span></span>
+          <span class="text-xs flex items-center space-x-1.5"><span class="w-3 h-0.5 bg-rose-500 inline-block"></span><span class="text-slate-400">Stop-Loss / Kilit</span></span>
+        </div>
+        <div class="text-xs text-slate-400 font-mono">
+          1H Wilder RSI(14): <span id="rsi-val" class="font-bold text-amber-400">50.0</span>
+        </div>
+      </div>
+
+      <div class="relative w-full h-60 bg-slate-950/80 rounded-lg border border-slate-800 overflow-hidden">
+        <canvas id="chartCanvas" class="w-full h-full block"></canvas>
+      </div>
+
+      <div class="space-y-1">
+        <div class="flex justify-between text-[11px] text-slate-500 font-mono">
+          <span>Aşırı Satım (30)</span>
+          <span>Nötr (50)</span>
+          <span>Aşırı Alım (70)</span>
+        </div>
+        <div class="h-2 w-full bg-slate-950 rounded-full overflow-hidden border border-slate-800 relative">
+          <div class="absolute left-[30%] top-0 bottom-0 w-px bg-slate-700"></div>
+          <div class="absolute left-[50%] top-0 bottom-0 w-px bg-slate-600"></div>
+          <div class="absolute left-[70%] top-0 bottom-0 w-px bg-slate-700"></div>
+          <div id="rsi-bar" class="h-full bg-amber-400 transition-all duration-300" style="width: 50%;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Alt İki Sütun: Kapanan İşlem Defteri & 13 Parite Canlı Emir Akışı -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 shadow-sm">
+        <div class="text-sm font-semibold text-slate-200 mb-3 flex items-center justify-between">
+          <span>Kapanan İşlem Defteri (1H Kilitli İcra)</span>
+          <span class="text-xs text-emerald-400 font-mono">Kademeli Daralan Trailing Koruması</span>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-xs font-mono">
+            <thead>
+              <tr class="text-slate-400 border-b border-slate-800 text-left">
+                <th class="pb-2">Saat</th>
+                <th class="pb-2">Coin / Yön</th>
+                <th class="pb-2">Giriş → Çıkış</th>
+                <th class="pb-2">Fee</th>
+                <th class="pb-2 text-right">NET K/Z (ROE)</th>
+              </tr>
+            </thead>
+            <tbody id="closed-trade-rows" class="divide-y divide-slate-800/60">
+              <tr><td colspan="5" class="py-4 text-center text-slate-500">Açık pozisyon takip ediliyor, kapanan işlemler burada listelenir...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 shadow-sm">
+        <div class="text-sm font-semibold text-slate-200 mb-3 flex items-center justify-between">
+          <span>Canlı Çoklu-Parite Binance İşlemleri (Son 8 Tick)</span>
+          <span class="text-xs text-slate-400">13 Coin Canlı Taker Akışı</span>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-xs font-mono">
+            <thead>
+              <tr class="text-slate-400 border-b border-slate-800 text-left">
+                <th class="pb-2">Zaman</th>
+                <th class="pb-2">Parite</th>
+                <th class="pb-2">Yön</th>
+                <th class="pb-2">Fiyat</th>
+                <th class="pb-2 text-right">Hacim (USDT)</th>
+              </tr>
+            </thead>
+            <tbody id="trade-rows" class="divide-y divide-slate-800/60">
+              <tr><td colspan="5" class="py-4 text-center text-slate-500">Canlı veriler akıyor...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // 13 Parite Canlı AggTrade Akışı
+    const WS_MULTI_URL = "wss://stream.binancefuture.com/stream?streams=btcusdt@aggTrade/ethusdt@aggTrade/solusdt@aggTrade/dogeusdt@aggTrade/xrpusdt@aggTrade/linkusdt@aggTrade/suiusdt@aggTrade/avaxusdt@aggTrade/nearusdt@aggTrade/adausdt@aggTrade/aptusdt@aggTrade/dotusdt@aggTrade/tiausdt@aggTrade";
+    const TAKER_FEE = 0.0005;
+    const SLIPPAGE = 0.0005;
+
+    let activeSymbol = "BTCUSDT";
+    let rustState = {
+      side: "Flat",
+      symbol: "BTCUSDT",
+      leverage: 6,
+      entryPrice: 0,
+      qty: 0,
+      marginUsed: 0.0,
+      stopLoss: 0,
+      takeProfit: 0,
+      trailingActive: false,
+      balance: 10.0,
+      ema9: 0,
+      ema21: 0,
+      rsi14: 50,
+      atr14: 0,
+      regime: 0
+    };
+
+    let symbolHistory = {};
+    let tickCount = 0;
+    let tradeHistory = [];
+
+    const elRadarGrid = document.getElementById("radar-grid");
+    const elActiveSymTitle = document.getElementById("active-sym-title");
+    const elChartSymLabel = document.getElementById("chart-sym-label");
+    const elAtrBadge = document.getElementById("atr-badge");
+    const elCurrentPrice = document.getElementById("current-price");
+    const elEmaFast = document.getElementById("ema-fast");
+    const elEmaSlow = document.getElementById("ema-slow");
+    const elPosBadge = document.getElementById("pos-badge");
+    const elPosQty = document.getElementById("pos-qty");
+    const elEntryPrice = document.getElementById("entry-price");
+    const elMarginUsed = document.getElementById("margin-used");
+    const elTrailingBadge = document.getElementById("trailing-badge");
+    const elPnlAmount = document.getElementById("pnl-amount");
+    const elRoeBadge = document.getElementById("roe-badge");
+    const elGrossPnl = document.getElementById("gross-pnl");
+    const elFeesPaid = document.getElementById("fees-paid");
+    const elEquityVal = document.getElementById("equity-val");
+    const elSlPrice = document.getElementById("sl-price");
+    const elTpPrice = document.getElementById("tp-price");
+    const elRealizedPnl = document.getElementById("realized-pnl");
+    const elMaxDd = document.getElementById("max-dd");
+    const elWinrateBadge = document.getElementById("winrate-badge");
+    const elRsiVal = document.getElementById("rsi-val");
+    const elRsiBar = document.getElementById("rsi-bar");
+    const elTickCounter = document.getElementById("tick-counter");
+    const elTradeRows = document.getElementById("trade-rows");
+    const elClosedTradeRows = document.getElementById("closed-trade-rows");
+    const elRustSyncText = document.getElementById("rust-sync-text");
+
+    const canvas = document.getElementById("chartCanvas");
+    const ctx = canvas.getContext("2d");
+
+    function resizeCanvas() {
+      canvas.width = canvas.parentElement.clientWidth;
+      canvas.height = canvas.parentElement.clientHeight;
+    }
+    window.addEventListener("resize", resizeCanvas);
+    resizeCanvas();
+
+    function fmtPrice(sym, p) {
+      if (!p || isNaN(p)) return "--";
+      if (sym === "DOGEUSDT") return p.toFixed(5);
+      if (sym === "XRPUSDT" || sym === "ADAUSDT" || sym === "DOTUSDT" || sym === "TIAUSDT") return p.toFixed(4);
+      if (sym === "SOLUSDT" || sym === "LINKUSDT" || sym === "AVAXUSDT" || sym === "NEARUSDT") return p.toFixed(3);
+      return p.toFixed(2);
+    }
+
+    function pollRustTelemetry() {
+      const oldScript = document.getElementById("rust-telemetry-script");
+      if (oldScript) oldScript.remove();
+
+      const s = document.createElement("script");
+      s.id = "rust-telemetry-script";
+      s.src = "telemetry.js?t=" + Date.now();
+      s.onload = () => {
+        const d = window.__RUST_STATE__;
+        if (!d) return;
+
+        elRustSyncText.textContent = `Rust v8.8 • ${d.updated_at}`;
+        if (d.active_symbol && d.active_symbol !== activeSymbol) {
+          activeSymbol = d.active_symbol;
+        }
+        elActiveSymTitle.textContent = activeSymbol;
+        elChartSymLabel.textContent = activeSymbol;
+        elAtrBadge.textContent = `1H ATR: ${fmtPrice(activeSymbol, d.active_atr14)}`;
+        elEmaFast.textContent = fmtPrice(activeSymbol, d.active_ema9);
+        elEmaSlow.textContent = fmtPrice(activeSymbol, d.active_ema21);
+        elRsiVal.textContent = d.active_rsi14.toFixed(1);
+        elRsiBar.style.width = `${Math.min(100, Math.max(0, d.active_rsi14))}%`;
+
+        rustState.ema9 = d.active_ema9;
+        rustState.ema21 = d.active_ema21;
+        rustState.rsi14 = d.active_rsi14;
+        rustState.atr14 = d.active_atr14;
+        rustState.balance = d.balance;
+
+        elRealizedPnl.textContent = `${d.realized_net_pnl >= 0 ? "+$" : "-$"}${Math.abs(d.realized_net_pnl).toFixed(3)}`;
+        elMaxDd.textContent = `${d.max_drawdown_pct.toFixed(2)}%`;
+        elWinrateBadge.textContent = `İşlem: ${d.total_trades} (${d.winning_trades}K/${d.losing_trades}Z)`;
+
+        // 13 Coin Radar Matrisini Güncelle
+        if (d.radar && d.radar.length > 0) {
+          elRadarGrid.innerHTML = d.radar.map(r => {
+            const isActive = r.symbol === activeSymbol;
+            const scoreColor = r.signal_score >= 65
+              ? (r.signal_dir === "LONG" ? "text-emerald-400 border-emerald-500/40 bg-emerald-500/10" : "text-rose-400 border-rose-500/40 bg-rose-500/10")
+              : "text-slate-400 border-slate-700 bg-slate-800/50";
+            const takerBuy = r.taker_buy_pct || 50.0;
+            const topLong = r.top_long_pct || 50.0;
+            const deltaOi = r.delta_oi_pct || 0.0;
+            return `
+              <div class="p-2.5 rounded-lg border ${isActive ? 'border-cyan-500/60 bg-slate-800/80 shadow-md shadow-cyan-950/50' : 'border-slate-800 bg-slate-950/60'} flex flex-col justify-between">
+                <div class="flex items-center justify-between">
+                  <span class="font-bold text-xs text-slate-100">${r.symbol.replace('USDT','')} <span class="text-[10px] text-amber-400">${r.leverage}x</span></span>
+                  <span class="text-[10px] font-mono px-1.5 py-0.5 rounded border ${scoreColor}">${r.signal_dir} ${r.signal_score}</span>
+                </div>
+                <div class="text-sm font-mono font-bold text-cyan-300 mt-1">${fmtPrice(r.symbol, r.price)}</div>
+                <div class="flex justify-between text-[10px] font-mono text-slate-400 mt-0.5">
+                  <span>RSI: ${r.rsi14.toFixed(0)}</span>
+                  <span class="${r.adx14 >= 24 ? 'text-amber-400 font-bold' : 'text-slate-500'}">ADX: ${r.adx14 ? r.adx14.toFixed(0) : '--'}</span>
+                  <span class="${r.trend === 'BOĞA' ? 'text-emerald-400' : 'text-rose-400'}">${r.trend}</span>
+                </div>
+                <div class="flex justify-between text-[9px] font-mono mt-0.5 border-t border-slate-800/60 pt-0.5">
+                  <span class="text-emerald-400/80">D: ${r.pivot_support ? fmtPrice(r.symbol, r.pivot_support) : '-'}</span>
+                  <span class="text-rose-400/80">R: ${r.pivot_resistance ? fmtPrice(r.symbol, r.pivot_resistance) : '-'}</span>
+                </div>
+                <!-- 1H Order Flow & Balina & OI Paneli -->
+                <div class="mt-1.5 pt-1.5 border-t border-slate-800/80">
+                  <div class="flex justify-between text-[9px] font-mono">
+                    <span class="text-slate-400">Taker Flow:</span>
+                    <span class="${takerBuy >= 50 ? 'text-emerald-400' : 'text-rose-400'} font-bold">🟢 ${takerBuy.toFixed(0)}% / ${(100 - takerBuy).toFixed(0)}% 🔴</span>
+                  </div>
+                  <div class="w-full bg-rose-500/30 h-1.5 rounded-full overflow-hidden mt-0.5 flex">
+                    <div class="bg-emerald-500 h-full transition-all duration-300" style="width: ${takerBuy}%"></div>
+                  </div>
+                  <div class="flex justify-between items-center text-[9px] font-mono mt-1 text-slate-400">
+                    <span>Balina:</span>
+                    <span class="${topLong >= 55 ? 'text-indigo-300' : 'text-amber-400'} font-semibold">${topLong.toFixed(0)}% Long</span>
+                    <span class="${deltaOi >= 0.15 ? 'text-emerald-400 font-bold' : (deltaOi <= -0.15 ? 'text-rose-400 font-bold' : 'text-slate-500')}">OI: ${deltaOi >= 0 ? '+' : ''}${deltaOi.toFixed(2)}%</span>
+                  </div>
+                  <div class="text-[8.5px] font-bold text-center mt-1 px-1 py-0.5 rounded ${r.signal_score >= 65 ? (r.signal_dir === 'LONG' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 animate-pulse' : 'bg-rose-500/20 text-rose-300 border border-rose-500/40 animate-pulse') : 'bg-slate-900 border border-slate-800 text-slate-300'} truncate">
+                    ${r.signal_score >= 65 ? `⚡ 1H SİNYAL: ${r.signal_dir} (${r.signal_score}/100)` : (r.order_flow_sentiment || '⚪ DENGELİ AKIŞ')}
+                  </div>
+                </div>
+              </div>
+            `;
+          }).join("");
+        }
+
+        if (d.position && (d.position.side === "Long" || d.position.side === "Short")) {
+          const isLong = d.position.side === "Long";
+          const regimeNum = d.position.regime || 1;
+          const regimeLabel = regimeNum === 1 ? "Mod 1 (Likidite)" : (regimeNum === 2 ? "Mod 2 (Kırılım)" : "Mod 3 (Pullback)");
+
+          rustState.side = d.position.side;
+          rustState.symbol = d.position.symbol;
+          rustState.leverage = d.position.leverage;
+          rustState.entryPrice = d.position.entry_price;
+          rustState.qty = d.position.qty;
+          rustState.marginUsed = d.position.margin_used;
+          rustState.stopLoss = d.position.stop_loss;
+          rustState.takeProfit = d.position.take_profit;
+          rustState.trailingActive = d.position.trailing_active;
+          rustState.regime = regimeNum;
+
+          elPosBadge.textContent = `${isLong ? 'LONG' : 'SHORT'} ${d.position.symbol} • ${regimeLabel}`;
+          elPosBadge.className = isLong
+            ? "px-2 py-0.5 text-xs font-bold rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+            : "px-2 py-0.5 text-xs font-bold rounded bg-rose-500/20 text-rose-400 border border-rose-500/30";
+          elPosQty.textContent = `${d.position.qty} ${d.position.symbol.replace('USDT','')}`;
+          elEntryPrice.textContent = fmtPrice(d.position.symbol, d.position.entry_price);
+          elMarginUsed.textContent = `$${d.position.margin_used.toFixed(2)}`;
+          elSlPrice.textContent = fmtPrice(d.position.symbol, d.position.stop_loss);
+          elTpPrice.textContent = fmtPrice(d.position.symbol, d.position.take_profit);
+          elTrailingBadge.textContent = d.position.trailing_active ? "🔒 KÂR KİLİDİ AKTİF (0.4x)" : "🛡️ ATR KORUMA";
+        } else {
+          rustState.side = "Flat";
+          elPosBadge.textContent = "13 COİN 1H TARANIYOR";
+          elPosBadge.className = "px-2 py-0.5 text-xs font-bold rounded bg-slate-800 text-slate-300";
+          elPosQty.textContent = "--";
+          elEntryPrice.textContent = "--";
+          elMarginUsed.textContent = "--";
+          elSlPrice.textContent = "--";
+          elTpPrice.textContent = "--";
+          elEquityVal.textContent = `$${d.balance.toFixed(3)} USDT`;
+        }
+
+        if (d.closed_trades && d.closed_trades.length > 0) {
+          elClosedTradeRows.innerHTML = d.closed_trades.slice(0, 8).map(t => `
+            <tr class="hover:bg-slate-800/40">
+              <td class="py-1 text-slate-400">${t.timestamp}</td>
+              <td class="py-1 font-semibold ${t.side === 'LONG' ? 'text-emerald-400' : 'text-rose-400'}">${t.symbol.replace('USDT','')} ${t.side} (${t.reason.split(' ')[0]})</td>
+              <td class="py-1 text-slate-300">${fmtPrice(t.symbol, t.entry_price)} → ${fmtPrice(t.symbol, t.exit_price)}</td>
+              <td class="py-1 text-rose-400">-$${t.fees_paid.toFixed(3)}</td>
+              <td class="py-1 text-right font-bold ${t.net_pnl >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${t.net_pnl >= 0 ? '+$' : '-$'}${Math.abs(t.net_pnl).toFixed(3)} (${t.roe_pct >= 0 ? '+' : ''}${t.roe_pct.toFixed(1)}%)</td>
+            </tr>
+          `).join("");
+        }
+      };
+      document.body.appendChild(s);
+    }
+    setInterval(pollRustTelemetry, 500);
+
+    // 1-Saatlik Mum Kapanış Sayacı
+    function updateCountdown() {
+      const now = new Date();
+      const s = now.getSeconds();
+      const m = now.getMinutes();
+      const remSec = (59 - m) * 60 + (60 - s);
+      const min = Math.floor(remSec / 60);
+      const sec = remSec % 60;
+      const el = document.getElementById("candle-countdown");
+      if (el) {
+        el.textContent = `${min.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
+      }
+    }
+    setInterval(updateCountdown, 1000);
+    updateCountdown();
+
+    function drawChart() {
+      const hist = symbolHistory[activeSymbol];
+      if (!hist || hist.prices.length < 2) return;
+      const w = canvas.width;
+      const h = canvas.height;
+      ctx.clearRect(0, 0, w, h);
+
+      const allVals = [...hist.prices];
+      if (rustState.ema9 > 0) allVals.push(rustState.ema9, rustState.ema21);
+      if (rustState.side !== "Flat" && rustState.symbol === activeSymbol) {
+        allVals.push(rustState.entryPrice, rustState.stopLoss);
+      }
+      let min = Math.min(...allVals);
+      let max = Math.max(...allVals);
+      let pad = (max - min) * 0.15 || (min * 0.002);
+      min -= pad;
+      max += pad;
+
+      function getY(val) {
+        return h - ((val - min) / (max - min)) * (h - 20) - 10;
+      }
+
+      ctx.strokeStyle = "rgba(51, 65, 85, 0.4)";
+      ctx.lineWidth = 1;
+      for (let i = 1; i <= 3; i++) {
+        let y = (h / 4) * i;
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(w, y);
+        ctx.stroke();
+      }
+
+      if (rustState.side !== "Flat" && rustState.symbol === activeSymbol) {
+        let entryY = getY(rustState.entryPrice);
+        ctx.strokeStyle = "rgba(34, 197, 94, 0.8)";
+        ctx.setLineDash([4, 4]);
+        ctx.beginPath();
+        ctx.moveTo(0, entryY);
+        ctx.lineTo(w, entryY);
+        ctx.stroke();
+
+        let slY = getY(rustState.stopLoss);
+        ctx.strokeStyle = "rgba(244, 63, 94, 0.85)";
+        ctx.setLineDash([6, 3]);
+        ctx.beginPath();
+        ctx.moveTo(0, slY);
+        ctx.lineTo(w, slY);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+
+      ctx.strokeStyle = "#22d3ee";
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      for (let i = 0; i < hist.prices.length; i++) {
+        let x = (w / (hist.prices.length - 1)) * i;
+        let y = getY(hist.prices[i]);
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+    }
+
+    function connectWS() {
+      const ws = new WebSocket(WS_MULTI_URL);
+      ws.onmessage = (event) => {
+        const wrapper = JSON.parse(event.data);
+        if (!wrapper || !wrapper.data) return;
+        const data = wrapper.data;
+        const sym = data.s || wrapper.stream.split("@")[0].toUpperCase();
+        const price = parseFloat(data.p);
+        const qty = parseFloat(data.q);
+        const isBuyerMaker = data.m;
+        tickCount++;
+
+        elTickCounter.textContent = `Tick: #${tickCount}`;
+
+        if (!symbolHistory[sym]) symbolHistory[sym] = { prices: [] };
+        symbolHistory[sym].prices.push(price);
+        if (symbolHistory[sym].prices.length > 60) symbolHistory[sym].prices.shift();
+
+        if (sym === activeSymbol) {
+          elCurrentPrice.textContent = fmtPrice(sym, price);
+          drawChart();
+        }
+
+        if (rustState.side !== "Flat" && sym === rustState.symbol) {
+          const isLong = rustState.side === "Long";
+          const exitExec = isLong ? price * (1 - SLIPPAGE) : price * (1 + SLIPPAGE);
+          const grossPnl = isLong
+            ? (exitExec - rustState.entryPrice) * rustState.qty
+            : (rustState.entryPrice - exitExec) * rustState.qty;
+          const roundTripFee = (rustState.entryPrice * rustState.qty * TAKER_FEE) + (exitExec * rustState.qty * TAKER_FEE);
+          const netPnl = grossPnl - roundTripFee;
+          const roePct = rustState.marginUsed > 0 ? (netPnl / rustState.marginUsed) * 100 : 0;
+
+          elGrossPnl.textContent = `${grossPnl >= 0 ? "+$" : "-$"}${Math.abs(grossPnl).toFixed(3)}`;
+          elFeesPaid.textContent = `-$${roundTripFee.toFixed(3)}`;
+          elEquityVal.textContent = `$${(rustState.balance + grossPnl).toFixed(3)} USDT`;
+
+          if (netPnl >= 0) {
+            elPnlAmount.textContent = `+$${netPnl.toFixed(3)}`;
+            elPnlAmount.className = "text-2xl font-bold font-mono text-emerald-400 glow-green mt-1";
+            elRoeBadge.textContent = `ROE: +${roePct.toFixed(2)}%`;
+            elRoeBadge.className = "text-xs font-mono font-semibold text-emerald-400";
+          } else {
+            elPnlAmount.textContent = `-$${Math.abs(netPnl).toFixed(3)}`;
+            elPnlAmount.className = "text-2xl font-bold font-mono text-rose-400 glow-red mt-1";
+            elRoeBadge.textContent = `ROE: ${roePct.toFixed(2)}%`;
+            elRoeBadge.className = "text-xs font-mono font-semibold text-rose-400";
+          }
+        }
+
+        const now = new Date(data.T);
+        const timeStr = now.toTimeString().split(" ")[0] + "." + String(now.getMilliseconds()).padStart(3, "0");
+        tradeHistory.unshift({
+          time: timeStr,
+          sym: sym.replace("USDT", ""),
+          side: isBuyerMaker ? "SAT" : "AL",
+          sideColor: isBuyerMaker ? "text-rose-400" : "text-emerald-400",
+          price: fmtPrice(sym, price),
+          volume: (price * qty).toFixed(2)
+        });
+        if (tradeHistory.length > 8) tradeHistory.pop();
+
+        elTradeRows.innerHTML = tradeHistory.map(t => `
+          <tr class="hover:bg-slate-800/40 transition-colors">
+            <td class="py-1 text-slate-400">${t.time}</td>
+            <td class="py-1 font-bold text-cyan-400">${t.sym}</td>
+            <td class="py-1 font-semibold ${t.sideColor}">${t.side}</td>
+            <td class="py-1 text-slate-200">${t.price}</td>
+            <td class="py-1 text-right text-slate-400">$${t.volume}</td>
+          </tr>
+        `).join("");
+      };
+      ws.onclose = () => setTimeout(connectWS, 2000);
+    }
+
+    connectWS();
+    pollRustTelemetry();
+  </script>
+</body>
+</html>
