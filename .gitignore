@@ -9,6 +9,12 @@ target/
 *keys.json
 testnet_keys.json
 
+# Data cache & large historical files (do not commit)
+data/cache/*_1m.json
+data/cache/*_5m.json
+data/aggtrades/
+*.parquet
+
 # Backups & archives
 *.bak*
 *.bak_strategy
