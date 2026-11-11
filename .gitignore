@@ -6,6 +6,8 @@ target/
 # Sensitive credentials & keys
 *.pem
 *mainnet_keys.json
+*keys.json
+testnet_keys.json
 
 # Backups & archives
 *.bak*

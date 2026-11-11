@@ -65,7 +65,7 @@ const STATE_FILE: &str = "bot_state.json";
 const TELEMETRY_JS_FILE: &str = "telemetry.js";
 const KEYS_FILE: &str = "testnet_keys.json";
 #[allow(dead_code)]
-const TYPESAFE_API_KEY: &str = "apikey_2602055d44d82ff4d00800ce1a9c1b0d59a_9dc9fa7b2e8e83e0c23bde23f22ac099206b463d7d0ef440d34a4754655b918b";
+const TYPESAFE_API_KEY: &str = "";
 #[allow(dead_code)]
 const TYPESAFE_API_URL: &str = "https://api.typesafe.ai/v1/systemone";
 
