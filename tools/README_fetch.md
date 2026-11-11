@@ -7,17 +7,20 @@ Designed for statistical rigor, deterministic backtesting, and quantitative rese
 
 ## 📌 Architecture & Design Principles
 
-1. **Zero-Authentication Invariant:** Uses Binance USDT-M Futures **public endpoints** (`/fapi/v1/klines` and `/fapi/v1/aggTrades`). No API keys, secrets, or IP whitelisting required.
+1. **Zero-Authentication Invariant:** Uses Binance USDT-M Futures **public endpoints** (`/fapi/v1/klines`, `/fapi/v1/aggTrades`, and Binance Vision daily archives). No API keys, secrets, or IP whitelisting required.
 2. **Schema Uniformity:** Output files (`data/cache/{SYMBOL}_{INTERVAL}.json`) strictly follow the production cache schema required by the Rust native backtest engine and `run_strategy.py`.
 3. **Data Integrity & Gap Auditing:** Automatically inspects every retrieved sequence for timestamp gaps, missing candles, and duplicates.
-4. **Adaptive Rate-Limiting:** Incorporates proactive inter-request delays and automatic exponential backoff with `Retry-After` header support for HTTP 429/418 responses.
-5. **Git Cleanliness:** Large data cache files (`*_1m.json`, `*_5m.json`, `data/aggtrades/`, `*.parquet`) are strictly ignored via `.gitignore`.
+4. **Dual Engine for Order Flow:**
+   - **Binance Vision Daily Archives:** Ingests 30+ days of tick-level aggregate trade order flow at ~25 seconds per symbol without REST rate limits.
+   - **Binance REST API (`/fapi/v1/aggTrades`):** Ingests live partial-day trades with deterministic `fromId` sequencing.
+5. **Adaptive Rate-Limiting:** Incorporates proactive inter-request delays and automatic exponential backoff with `Retry-After` header support for HTTP 429/418 responses.
+6. **Git Cleanliness:** Large data cache files (`*_1m.json`, `*_5m.json`, `data/aggtrades/`, `*.parquet`) are strictly ignored via `.gitignore`.
 
 ---
 
 ## 🛠️ Tool 1: `fetch_klines.py` (Candle Data Fetcher)
 
-Paginates historical OHLCV klines up to 1,500 bars per request across any canonical timeframe.
+Paginates historical OHLCV klines up to 1,500 bars per request across any canonical timeframe with multi-threaded concurrency.
 
 ### Supported Symbols (13 Pairs)
 `BTCUSDT`, `ETHUSDT`, `SOLUSDT`, `BNBUSDT`, `DOGEUSDT`, `NEARUSDT`, `APTUSDT`, `SUIUSDT`, `INJUSDT`, `AVAXUSDT`, `LINKUSDT`, `ARBUSDT`, `1000PEPEUSDT`
@@ -32,6 +35,7 @@ Paginates historical OHLCV klines up to 1,500 bars per request across any canoni
 | `--start` | `None` | Explicit start date (`YYYY-MM-DD` or ISO timestamp). Overrides `--days`. |
 | `--end` | `None` | Explicit end date (`YYYY-MM-DD` or ISO timestamp). Defaults to current UTC. |
 | `--output-dir` | `data/cache` | Directory to store JSON cache files. |
+| `--concurrency` | `4` | Number of worker threads for parallel symbol downloading. |
 | `--delay` | `0.08` | Delay between HTTP requests in seconds (80ms). |
 
 ### Example Commands
@@ -40,14 +44,11 @@ Paginates historical OHLCV klines up to 1,500 bars per request across any canoni
 # 1. Fetch 6 months of 5m candles for all 13 symbols
 python -X utf8 tools/fetch_klines.py --timeframes 5m --days 180
 
-# 2. Fetch 6 months of 1m candles for top 3 symbols
-python -X utf8 tools/fetch_klines.py --symbols BTCUSDT,ETHUSDT,SOLUSDT --timeframes 1m --days 180
+# 2. Fetch 6 months of 1m candles across all 13 symbols with 4 worker threads
+python -X utf8 tools/fetch_klines.py --symbols all --timeframes 1m --days 180 --concurrency 4
 
 # 3. Fetch both 1m and 5m candles for a specific historical date window
 python -X utf8 tools/fetch_klines.py --symbols BTCUSDT --timeframes 1m,5m --start 2026-05-01 --end 2026-11-01
-
-# 4. Quick sample check (last 7 days of 5m candles)
-python -X utf8 tools/fetch_klines.py --symbols BTCUSDT,ETHUSDT --timeframes 5m --days 7
 ```
 
 ### Kline Output Format (`data/cache/{SYM}_{tf}.json`)
@@ -77,7 +78,7 @@ python -X utf8 tools/fetch_klines.py --symbols BTCUSDT,ETHUSDT --timeframes 5m -
 
 ## 🌊 Tool 2: `fetch_aggtrades.py` (Aggregate Order Flow Fetcher)
 
-Paginates tick-level aggregated trades using deterministic `fromId` sequencing to ensure **zero missing trades and zero duplicate fills**.
+Fetches tick-level aggregated trades using Binance Vision daily archives and deterministic `fromId` REST synchronization to ensure **zero missing trades and zero duplicate fills**.
 
 ### Supported Symbols (9 Pairs)
 `BTCUSDT`, `ETHUSDT`, `SOLUSDT`, `DOGEUSDT`, `NEARUSDT`, `APTUSDT`, `SUIUSDT`, `AVAXUSDT`, `LINKUSDT`
@@ -88,24 +89,24 @@ Paginates tick-level aggregated trades using deterministic `fromId` sequencing t
 | :--- | :--- | :--- |
 | `--symbols` | 9 default pairs | Comma-separated symbols or `all` |
 | `--days` | `30` | Number of days back to ingest (default: 30 days) |
-| `--start` | `None` | Explicit start date (`YYYY-MM-DD` or ISO timestamp). Overrides `--days`. |
-| `--end` | `None` | Explicit end date (`YYYY-MM-DD` or ISO timestamp). Defaults to current UTC. |
-| `--format` | `parquet` | Storage format: `parquet` (requires `pyarrow`) or `json` |
-| `--max-trades` | `None` | Optional ceiling on trades per symbol (e.g. `50000` for testing) |
+| `--source` | `vision` | Source engine: `vision` (daily archives, ultra-fast) or `rest` (REST API) |
+| `--start` | `None` | Explicit start date (`YYYY-MM-DD`). |
+| `--end` | `None` | Explicit end date (`YYYY-MM-DD`). Defaults to current UTC. |
+| `--concurrency` | `6` | Number of parallel workers for downloading daily archives |
+| `--no-today` | `False` | Skip fetching partial intraday trades for today via REST |
 | `--output-dir` | `data/aggtrades` | Target storage directory |
-| `--delay` | `0.05` | Delay between HTTP requests in seconds (50ms). |
 
 ### Example Commands
 
 ```bash
-# 1. Fetch last 30 days of aggTrades in compressed Parquet format
-python -X utf8 tools/fetch_aggtrades.py --symbols BTCUSDT --days 30 --format parquet
+# 1. Fetch last 30 days of aggTrades for all 9 symbols in compressed Parquet format via Vision
+python -X utf8 tools/fetch_aggtrades.py --symbols all --days 30 --source vision
 
-# 2. Fetch sample slice of 50,000 trades for order-flow testing
-python -X utf8 tools/fetch_aggtrades.py --symbols BTCUSDT,ETHUSDT,SOLUSDT --days 7 --max-trades 50000
+# 2. Fetch single symbol (e.g. BTCUSDT) with custom lookback
+python -X utf8 tools/fetch_aggtrades.py --symbols BTCUSDT --days 30
 
-# 3. Fetch aggTrades in JSON format (fallback)
-python -X utf8 tools/fetch_aggtrades.py --symbols NEARUSDT --days 3 --format json
+# 3. Fallback to REST sequential pagination
+python -X utf8 tools/fetch_aggtrades.py --symbols NEARUSDT --days 3 --source rest
 ```
 
 ### Parquet Schema (`data/aggtrades/{SYM}.parquet`)
@@ -123,6 +124,6 @@ python -X utf8 tools/fetch_aggtrades.py --symbols NEARUSDT --days 3 --format jso
 
 Both scripts print a post-run summary matrix verifying:
 1. **Total Count:** Compares actual bar count against theoretical span $T_{\text{span}} / \Delta t$.
-2. **Gap Detection:** Flags any interval where $t_{i+1} - t_i > \text{interval\_ms}$.
+2. **Gap Detection:** Flags any interval where $t_{i+1} - t_i > \text{interval\_ms}$ or trade ID gaps where $\Delta \text{id} > 1$.
 3. **Duplicate Check:** Confirms that $\text{Unique}(t) \equiv \text{Count}(t)$.
 4. **Clean Exit:** Reports status as `CLEAN` only when zero gaps and zero duplicates are present.

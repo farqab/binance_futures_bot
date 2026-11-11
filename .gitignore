@@ -25,3 +25,5 @@ project.tar.gz
 Thumbs.db
 .vscode/
 .idea/
+__pycache__/
+*.pyc

@@ -375,6 +375,12 @@ def main() -> None:
         default=0.08,
         help="Polite delay between HTTP requests in seconds (default: 80ms)",
     )
+    parser.add_argument(
+        "--concurrency",
+        type=int,
+        default=4,
+        help="Number of concurrent worker threads across symbols (default: 4)",
+    )
 
     args = parser.parse_args()
 
@@ -401,52 +407,65 @@ def main() -> None:
     print(f"📁 Output Dir: {args.output_dir}")
     print("=" * 80)
 
-    summary_table: List[Dict[str, Any]] = []
+    import concurrent.futures
 
-    for tf in timeframes:
-        for sym in symbols:
-            try:
-                bars, audit = fetch_symbol_klines(
-                    sym, tf, start_time_ms, end_time_ms, request_delay_sec=args.delay
-                )
-                if bars:
-                    saved_info = save_kline_cache(sym, tf, bars, output_dir=args.output_dir)
-                    summary_table.append({
-                        "symbol": sym,
-                        "interval": tf,
-                        "bars": audit["bar_count"],
-                        "first": audit["first_bar"],
-                        "last": audit["last_bar"],
-                        "gaps": audit["gap_count"],
-                        "duplicates": audit["duplicates"],
-                        "status": audit["status"],
-                        "saved": saved_info,
-                    })
-                else:
-                    summary_table.append({
-                        "symbol": sym,
-                        "interval": tf,
-                        "bars": 0,
-                        "first": "N/A",
-                        "last": "N/A",
-                        "gaps": 0,
-                        "duplicates": 0,
-                        "status": "EMPTY",
-                        "saved": "N/A",
-                    })
-            except Exception as e:
-                print(f"\n❌ Error fetching {sym} {tf}: {e}")
-                summary_table.append({
+    def worker_fetch(task: Tuple[str, str]) -> Dict[str, Any]:
+        sym, tf = task
+        try:
+            bars, audit = fetch_symbol_klines(
+                sym, tf, start_time_ms, end_time_ms, request_delay_sec=args.delay
+            )
+            if bars:
+                saved_info = save_kline_cache(sym, tf, bars, output_dir=args.output_dir)
+                return {
+                    "symbol": sym,
+                    "interval": tf,
+                    "bars": audit["bar_count"],
+                    "first": audit["first_bar"],
+                    "last": audit["last_bar"],
+                    "gaps": audit["gap_count"],
+                    "duplicates": audit["duplicates"],
+                    "status": audit["status"],
+                    "saved": saved_info,
+                }
+            else:
+                return {
                     "symbol": sym,
                     "interval": tf,
                     "bars": 0,
-                    "first": "ERROR",
-                    "last": str(e),
+                    "first": "N/A",
+                    "last": "N/A",
                     "gaps": 0,
                     "duplicates": 0,
-                    "status": "FAILED",
+                    "status": "EMPTY",
                     "saved": "N/A",
-                })
+                }
+        except Exception as e:
+            print(f"\n❌ Error fetching {sym} {tf}: {e}")
+            return {
+                "symbol": sym,
+                "interval": tf,
+                "bars": 0,
+                "first": "ERROR",
+                "last": str(e),
+                "gaps": 0,
+                "duplicates": 0,
+                "status": "FAILED",
+                "saved": "N/A",
+            }
+
+    tasks = [(sym, tf) for tf in timeframes for sym in symbols]
+    summary_table: List[Dict[str, Any]] = []
+
+    if args.concurrency > 1 and len(tasks) > 1:
+        print(f"⚡ Running with {args.concurrency} concurrent worker threads...")
+        with concurrent.futures.ThreadPoolExecutor(max_workers=args.concurrency) as executor:
+            futures = [executor.submit(worker_fetch, t) for t in tasks]
+            for f in concurrent.futures.as_completed(futures):
+                summary_table.append(f.result())
+    else:
+        for t in tasks:
+            summary_table.append(worker_fetch(t))
 
     # Print summary report
     print("\n" + "=" * 90)
